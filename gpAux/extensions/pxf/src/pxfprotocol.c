@@ -17,7 +17,8 @@
  * under the License.
  *
  */
-#include "postgres.h"
+
+#include "pxfbridge.h"
 #include "fmgr.h"
 #include "cdb/cdbvars.h"
 #include "access/extprotocol.h"
@@ -35,10 +36,8 @@ Datum pxfprotocol_export(PG_FUNCTION_ARGS);
 Datum pxfprotocol_import(PG_FUNCTION_ARGS);
 Datum pxfprotocol_validate_urls(PG_FUNCTION_ARGS);
 
-typedef struct {
-    int32 row_count;
-} context_t;
-
+void init_context(gphadoop_context **context);
+void cleanup_context(gphadoop_context *context);
 
 Datum
 pxfprotocol_validate_urls(PG_FUNCTION_ARGS)
@@ -62,38 +61,52 @@ pxfprotocol_import(PG_FUNCTION_ARGS)
         elog(ERROR, "extprotocol_import: not called by external protocol manager");
 
     /* retrieve user context */
-    context_t *context = (context_t *) EXTPROTOCOL_GET_USER_CTX(fcinfo);
+    gphadoop_context *context = (gphadoop_context *) EXTPROTOCOL_GET_USER_CTX(fcinfo);
 
     /* last call -- cleanup */
     if (EXTPROTOCOL_IS_LAST_CALL(fcinfo)) {
-        if (context != NULL)
-            pfree(context);
+        cleanup_context(context);
         EXTPROTOCOL_SET_USER_CTX(fcinfo, NULL);
+        PXFLOG("returning from last call");
         PG_RETURN_INT32(0);
     }
 
     /* first call -- do any desired init */
     if (context == NULL) {
-        context = palloc(sizeof(context_t));
-        context->row_count=0;
-
+        init_context(&context);
         EXTPROTOCOL_SET_USER_CTX(fcinfo, context);
+        gpbridge_import_start(context);
     }
 
-    if (context->row_count > 0)
-    {
-        /* no more data to read */
-        PG_RETURN_INT32(0);
+    int bytes_read = gpbridge_read(context, EXTPROTOCOL_GET_DATABUF(fcinfo), EXTPROTOCOL_GET_DATALEN(fcinfo));
+
+    PXFLOG("bytes read %d", bytes_read);
+    PG_RETURN_INT32(bytes_read);
+}
+
+void
+init_context(gphadoop_context **context)
+{
+    *context = (gphadoop_context *)palloc0(sizeof(gphadoop_context));
+
+    //TODO: remove mock fragment list
+    (*context)->current_fragment = palloc0(sizeof(ListCell));
+    (*context)->current_fragment->next = NULL;
+
+    //initStringInfo(&context->uri);
+    //initStringInfo(&context->write_file_name);
+}
+
+void
+cleanup_context(gphadoop_context *context)
+{
+    if (context != NULL) {
+        gpbridge_cleanup(context);
+        //pfree(context->uri.data);
+        //pfree(context->write_file_name.data);
+        PXFLOG("ready to free fragment");
+        //pfree(context->current_fragment); //TODO remove mock
+        PXFLOG("ready to free context");
+        pfree(context);
     }
-
-    char *data_buf = EXTPROTOCOL_GET_DATABUF(fcinfo);
-    int32 data_len = EXTPROTOCOL_GET_DATALEN(fcinfo);
-
-    /* produce a tuple */
-    snprintf(data_buf, data_len, "%d,hello world %d", GpIdentity.segindex, GpIdentity.segindex);
-
-    /* save state */
-    context->row_count++;
-
-    PG_RETURN_INT32(strlen(data_buf));
 }
