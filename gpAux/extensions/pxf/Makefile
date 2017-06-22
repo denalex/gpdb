@@ -17,9 +17,8 @@
 #
 
 MODULE_big = pxf
-OBJS       = src/pxfprotocol.o
+OBJS       = src/pxfprotocol.o src/pxfbridge.o
 
-# Launch
 ifdef USE_PGXS
 PGXS := $(shell pg_config --pgxs)
 include $(PGXS)
