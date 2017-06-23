@@ -20,7 +20,6 @@ DATA = pxf--1.0.sql
 MODULE_big = pxf
 OBJS       = src/pxfprotocol.o
 
-# Launch
 ifdef USE_PGXS
 PGXS := $(shell pg_config --pgxs)
 include $(PGXS)
