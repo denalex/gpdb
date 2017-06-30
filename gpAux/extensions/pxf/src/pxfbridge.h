@@ -21,11 +21,9 @@
 #ifndef GPDB_PXFBRIDGE_H
 #define GPDB_PXFBRIDGE_H
 
-
-
-
 #include "postgres.h"
-#include <nodes/pg_list.h>
+#include "nodes/pg_list.h"
+#include "cdb/cdbvars.h"
 
 typedef struct
 {
@@ -39,16 +37,6 @@ typedef struct
     int32 row_count;
 
 } gphadoop_context;
-
-/* include explicitly as cdbvars.h is not available when compiling as an extension */
-typedef struct GpId {
-    int4 numsegments; /* count of distinct segindexes */
-    int4 dbid;        /* the dbid of this database */
-    int4 segindex;    /* content indicator: -1 for entry database,
-                       * 0, ..., n-1 for segment database *
-                       * a primary and its mirror have the same segIndex */
-} GpId;
-extern GpId GpIdentity;
 
 void gpbridge_cleanup(gphadoop_context *context);
 void gpbridge_import_start(gphadoop_context *context);
