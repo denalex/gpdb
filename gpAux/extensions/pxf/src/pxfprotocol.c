@@ -19,9 +19,8 @@
  */
 
 #include "pxfbridge.h"
-#include "fmgr.h"
-#include "cdb/cdbvars.h"
 #include "access/extprotocol.h"
+#include "fmgr.h"
 
 /* define magic module unless run as a part of test cases */
 #ifndef UNIT_TESTING
