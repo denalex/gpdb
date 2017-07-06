@@ -31,12 +31,15 @@ PG_FUNCTION_INFO_V1(pxfprotocol_export);
 PG_FUNCTION_INFO_V1(pxfprotocol_import);
 PG_FUNCTION_INFO_V1(pxfprotocol_validate_urls);
 
+/* public function declarations */
 Datum pxfprotocol_export(PG_FUNCTION_ARGS);
 Datum pxfprotocol_import(PG_FUNCTION_ARGS);
 Datum pxfprotocol_validate_urls(PG_FUNCTION_ARGS);
 
-void init_context(gphadoop_context **context);
-void cleanup_context(gphadoop_context *context);
+/* helper function declarations */
+static gphadoop_context* create_context(const char *uri_str, bool is_import);
+static void cleanup_context(gphadoop_context *context);
+static void check_caller(PG_FUNCTION_ARGS, const char* func_name);
 
 Datum
 pxfprotocol_validate_urls(PG_FUNCTION_ARGS)
@@ -56,8 +59,7 @@ Datum
 pxfprotocol_import(PG_FUNCTION_ARGS)
 {
     /* Must be called via the external table format manager */
-    if (!CALLED_AS_EXTPROTOCOL(fcinfo))
-        elog(ERROR, "extprotocol_import: not called by external protocol manager");
+    check_caller(fcinfo, "pxfprotocol_import");
 
     /* retrieve user context */
     gphadoop_context *context = (gphadoop_context *) EXTPROTOCOL_GET_USER_CTX(fcinfo);
@@ -72,7 +74,7 @@ pxfprotocol_import(PG_FUNCTION_ARGS)
 
     /* first call -- do any desired init */
     if (context == NULL) {
-        init_context(&context);
+        context = create_context(EXTPROTOCOL_GET_URL(fcinfo), true);
         EXTPROTOCOL_SET_USER_CTX(fcinfo, context);
         gpbridge_import_start(context);
     }
@@ -83,29 +85,44 @@ pxfprotocol_import(PG_FUNCTION_ARGS)
     PG_RETURN_INT32(bytes_read);
 }
 
-void
-init_context(gphadoop_context **context)
+/*
+ * Allocates context and initializes values.
+ */
+static gphadoop_context* create_context(const char *uri_str, bool is_import)
 {
-    *context = (gphadoop_context *)palloc0(sizeof(gphadoop_context));
+    gphadoop_context* context = palloc0(sizeof(gphadoop_context));
+
+    /* parse the URI */
+    context->gphd_uri = parseGPHDUri(uri_str);
+    if (is_import)
+        Assert(context->gphd_uri->fragments != NULL);
 
     //TODO: remove mock fragment list
-    (*context)->current_fragment = palloc0(sizeof(ListCell));
-    (*context)->current_fragment->next = NULL;
+    context->current_fragment = palloc0(sizeof(ListCell));
+    context->current_fragment->next = NULL;
 
-    //initStringInfo(&context->uri);
-    //initStringInfo(&context->write_file_name);
+    initStringInfo(&context->uri);
+    initStringInfo(&context->write_file_name);
+    return context;
 }
 
-void
-cleanup_context(gphadoop_context *context)
+/*
+ * De-allocates context and dependent structures.
+ */
+static void cleanup_context(gphadoop_context *context)
 {
     if (context != NULL) {
         gpbridge_cleanup(context);
-        //pfree(context->uri.data);
-        //pfree(context->write_file_name.data);
-        PXFLOG("ready to free fragment");
-        //pfree(context->current_fragment); //TODO remove mock
-        PXFLOG("ready to free context");
+        pfree(context->uri.data);
+        pfree(context->write_file_name.data);
         pfree(context);
     }
+}
+
+static void check_caller(PG_FUNCTION_ARGS, const char* func_name)
+{
+    if (!CALLED_AS_EXTPROTOCOL(fcinfo))
+        ereport(ERROR,
+                (errcode(ERRCODE_INTERNAL_ERROR),
+                        errmsg("%s not called by external protocol manager", func_name)));
 }

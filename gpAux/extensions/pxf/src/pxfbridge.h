@@ -22,20 +22,19 @@
 #define GPDB_PXFBRIDGE_H
 
 #include "postgres.h"
+#include "pxfuriparser.h"
+#include "libchurl.h"
 #include "nodes/pg_list.h"
 #include "cdb/cdbvars.h"
 
 typedef struct
 {
-    //CHURL_HEADERS churl_headers;
-    //CHURL_HANDLE churl_handle;
-    //GPHDUri *gphd_uri;
-    //StringInfoData uri;
+    CHURL_HEADERS churl_headers;
+    CHURL_HANDLE churl_handle;
+    GPHDUri *gphd_uri;
+    StringInfoData uri;
     ListCell *current_fragment;
-    //StringInfoData write_file_name;
-    /* mock member */
-    int32 row_count;
-
+    StringInfoData write_file_name;
 } gphadoop_context;
 
 void gpbridge_cleanup(gphadoop_context *context);
