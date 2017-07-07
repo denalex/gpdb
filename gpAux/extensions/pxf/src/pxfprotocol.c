@@ -37,7 +37,7 @@ Datum pxfprotocol_import(PG_FUNCTION_ARGS);
 Datum pxfprotocol_validate_urls(PG_FUNCTION_ARGS);
 
 /* helper function declarations */
-static gphadoop_context* create_context(const char *uri_str, bool is_import);
+static gphadoop_context* create_context(PG_FUNCTION_ARGS, bool is_import);
 static void cleanup_context(gphadoop_context *context);
 static void check_caller(PG_FUNCTION_ARGS, const char* func_name);
 
@@ -74,7 +74,7 @@ pxfprotocol_import(PG_FUNCTION_ARGS)
 
     /* first call -- do any desired init */
     if (context == NULL) {
-        context = create_context(EXTPROTOCOL_GET_URL(fcinfo), true);
+        context = create_context(fcinfo, true);
         EXTPROTOCOL_SET_USER_CTX(fcinfo, context);
         gpbridge_import_start(context);
     }
@@ -88,12 +88,12 @@ pxfprotocol_import(PG_FUNCTION_ARGS)
 /*
  * Allocates context and initializes values.
  */
-static gphadoop_context* create_context(const char *uri_str, bool is_import)
+static gphadoop_context* create_context(PG_FUNCTION_ARGS, bool is_import)
 {
     gphadoop_context* context = palloc0(sizeof(gphadoop_context));
 
     /* parse the URI */
-    context->gphd_uri = parseGPHDUri(uri_str);
+    context->gphd_uri = parseGPHDUri(EXTPROTOCOL_GET_URL(fcinfo));
     if (is_import)
         Assert(context->gphd_uri->fragments != NULL);
 
@@ -103,6 +103,7 @@ static gphadoop_context* create_context(const char *uri_str, bool is_import)
 
     initStringInfo(&context->uri);
     initStringInfo(&context->write_file_name);
+    context->relation = EXTPROTOCOL_GET_RELATION(fcinfo);
     return context;
 }
 

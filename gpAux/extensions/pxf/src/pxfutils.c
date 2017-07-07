@@ -24,6 +24,7 @@
 #include "commands/dbcommands.h"
 #include "miscadmin.h"
 #include "utils/builtins.h"
+#include "utils/syscache.h"
 #include <net/if.h>
 #include <ifaddrs.h>
 #include <sys/socket.h>
@@ -225,3 +226,34 @@ char* replace_string(const char* string, const char* replace, const char* replac
 	return replaced;
 }
 
+/*
+ * TypeOidGetTypename
+ * Get the name of the type, given the OID
+ */
+char*
+TypeOidGetTypename(Oid typid)
+{
+
+	Assert(OidIsValid(typeid));
+
+	HeapTuple	typtup;
+	Form_pg_type typform;
+
+	typtup = SearchSysCache(TYPEOID,
+							ObjectIdGetDatum(typid),
+							0, 0, 0);
+	if (!HeapTupleIsValid(typtup))
+		elog(ERROR, "cache lookup failed for type %u", typid);
+
+	typform = (Form_pg_type) GETSTRUCT(typtup);
+
+	char *typname = NameStr(typform->typname);
+
+	StringInfoData tname;
+	initStringInfo(&tname);
+	appendStringInfo(&tname, "%s", typname);
+
+	ReleaseSysCache(typtup);
+
+	return tname.data;
+}

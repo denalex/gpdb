@@ -52,4 +52,7 @@ char* get_loopback_ip_addr(void);
 /* replace first occurrence of replace in string with replacement*/
 char* replace_string(const char* string, const char* replace, const char* replacement);
 
+/* get the name of the type, given the OID */
+char* TypeOidGetTypename(Oid typid);
+
 #endif	// _PXF_UTILS_H_

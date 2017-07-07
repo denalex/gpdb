@@ -21,7 +21,10 @@
 #include "pxfbridge.h"
 #include "access/extprotocol.h"
 #include "pxfuriparser.h"
+#include "pxfheaders.h"
 
+static void build_uri_for_read(gphadoop_context* context);
+static void add_querydata_to_http_headers(gphadoop_context* context);
 static size_t fill_buffer(gphadoop_context *context, char *start, size_t size);
 
 /*
@@ -48,24 +51,46 @@ void gpbridge_cleanup(gphadoop_context *context)
 void gpbridge_import_start(gphadoop_context *context)
 {
 
-    /* parse the URI <-- moved to pxfprotocol.c */
-    //context->gphd_uri = parseGPHDUri(EXTPROTOCOL_GET_URL(fcinfo));
-    //if (is_import)
-    //        Assert(context->gphd_uri->fragments != NULL);
-
-    /*
-    context->current_fragment = list_head(context->gphd_uri->fragments);
+    //TODO mock fragments data
+    //context->current_fragment = list_head(context->gphd_uri->fragments);
     build_uri_for_read(context);
     context->churl_headers = churl_headers_init();
-    add_querydata_to_http_header(context, fcinfo);
+    add_querydata_to_http_headers(context);
 
-    set_current_fragment_headers(context);
+    //set_current_fragment_headers(context);
 
-    context->churl_handle = churl_init_download(context->uri.data,
-                                                context->churl_headers);
-    */
+    //context->churl_handle = churl_init_download(context->uri.data,
+    //                                            context->churl_headers);
+
     /* read some bytes to make sure the connection is established */
     //churl_read_check_connectivity(context->churl_handle);
+}
+
+static void build_uri_for_read(gphadoop_context* context)
+{
+    FragmentData* data = (FragmentData*)lfirst(context->current_fragment);
+    resetStringInfo(&context->uri);
+    appendStringInfo(&context->uri, "http://%s/%s/%s/Bridge/",
+                     data->authority, PXF_SERVICE_PREFIX, PXF_VERSION);
+    elog(DEBUG2, "pxf: uri %s for read", context->uri.data);
+}
+
+/*
+ * Add key/value pairs to connection header.
+ * These values are the context of the query and used
+ * by the remote component.
+ */
+static void add_querydata_to_http_headers(gphadoop_context* context)
+{
+    PxfInputData inputData = {0};
+    inputData.headers = context->churl_headers;
+    inputData.gphduri = context->gphd_uri;
+    inputData.rel = context->relation;
+    //TODO port back filter and projection pushdown logic when implemented in GPDB
+    //TODO port back delegation token support, if needed
+
+    build_http_headers(&inputData);
+
 }
 
 int

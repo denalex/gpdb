@@ -35,6 +35,7 @@ typedef struct
     StringInfoData uri;
     ListCell *current_fragment;
     StringInfoData write_file_name;
+    Relation relation;
 } gphadoop_context;
 
 void gpbridge_cleanup(gphadoop_context *context);
