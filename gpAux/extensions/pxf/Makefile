@@ -1,7 +1,7 @@
 EXTENSION = pxf
 DATA = pxf--1.0.sql
 MODULE_big = pxf
-OBJS       = src/pxfprotocol.o src/pxfbridge.o src/pxfuriparser.o src/libchurl.o src/pxfutils.o
+OBJS       = src/pxfprotocol.o src/pxfbridge.o src/pxfuriparser.o src/libchurl.o src/pxfutils.o src/pxfheaders.o
 REGRESS    = setup pxf
 
 
