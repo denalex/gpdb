@@ -59,11 +59,11 @@ void gpbridge_import_start(gphadoop_context *context)
 
     //set_current_fragment_headers(context);
 
-    //context->churl_handle = churl_init_download(context->uri.data,
-    //                                            context->churl_headers);
+    context->churl_handle = churl_init_download(context->uri.data,
+                                                context->churl_headers);
 
     /* read some bytes to make sure the connection is established */
-    //churl_read_check_connectivity(context->churl_handle);
+    churl_read_check_connectivity(context->churl_handle);
 }
 
 static void build_uri_for_read(gphadoop_context* context)
@@ -103,7 +103,7 @@ gpbridge_read(gphadoop_context *context, char *databuf, int datalen)
     {
         /* done processing all data for current fragment -
          * check if the connection terminated with an error */
-        //churl_read_check_connectivity(context->churl_handle);
+        churl_read_check_connectivity(context->churl_handle);
 
         PXFLOG("before next fragment");
         /* start processing next fragment */
@@ -115,10 +115,10 @@ gpbridge_read(gphadoop_context *context, char *databuf, int datalen)
         }
 
         //set_current_fragment_headers(context);
-        //churl_download_restart(context->churl_handle, context->uri.data, context->churl_headers);
+        churl_download_restart(context->churl_handle, context->uri.data, context->churl_headers);
 
         /* read some bytes to make sure the connection is established */
-        //churl_read_check_connectivity(context->churl_handle);
+        churl_read_check_connectivity(context->churl_handle);
     }
 
     PXFLOG("bridge read %d bytes", n);
