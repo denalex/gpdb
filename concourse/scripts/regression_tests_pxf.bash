@@ -41,6 +41,18 @@ function setup_gpadmin_user() {
 	./gpdb_src/concourse/scripts/setup_gpadmin_user.bash "$TARGET_OS"
 }
 
+function setup_singlecluster() {
+  pushd /home/gpadmin
+  wget https://s3-us-west-2.amazonaws.com/pivotal-singlecluster/singlecluster/singlecluster-HDP.tar.gz
+  tar xzf singlecluster-HDP.tar.gz
+  pushd singlecluster/bin
+  ./init-pxf.sh
+
+  # set Standalone PXF mode without Hadoop
+  export PXFDEMO=true
+  ./start-pxf.sh
+}
+
 function _main() {
 	if [ -z "$TARGET_OS" ]; then
 		echo "FATAL: TARGET_OS is not set"
@@ -60,6 +72,7 @@ function _main() {
 	time gen_env
 
 	time run_regression_test
+  time setup_singlecluster
 }
 
 _main "$@"
