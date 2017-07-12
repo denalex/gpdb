@@ -44,7 +44,7 @@ int gpbridge_read(gphadoop_context *context, char *databuf, int datalen);
 
 /* helpers for dev debugging */
 
-#define PXF_DEBUG 0
+#define PXF_DEBUG 1
 
 #ifdef UNIT_TESTING
 #define TESTING 1
