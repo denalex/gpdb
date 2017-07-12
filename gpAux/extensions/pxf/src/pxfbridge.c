@@ -25,6 +25,7 @@
 
 static void build_uri_for_read(gphadoop_context* context);
 static void add_querydata_to_http_headers(gphadoop_context* context);
+static void set_current_fragment_headers(gphadoop_context* context);
 static size_t fill_buffer(gphadoop_context *context, char *start, size_t size);
 
 /*
@@ -51,13 +52,12 @@ void gpbridge_cleanup(gphadoop_context *context)
 void gpbridge_import_start(gphadoop_context *context)
 {
 
-    //TODO mock fragments data
-    //context->current_fragment = list_head(context->gphd_uri->fragments);
+    context->current_fragment = list_head(context->gphd_uri->fragments);
     build_uri_for_read(context);
     context->churl_headers = churl_headers_init();
     add_querydata_to_http_headers(context);
 
-    //set_current_fragment_headers(context);
+    set_current_fragment_headers(context);
 
     context->churl_handle = churl_init_download(context->uri.data,
                                                 context->churl_headers);
@@ -93,6 +93,52 @@ static void add_querydata_to_http_headers(gphadoop_context* context)
 
 }
 
+/*
+ * Change the headers with current fragment information:
+ * 1. X-GP-DATA-DIR header is changed to the source name of the current fragment.
+ * We reuse the same http header to send all requests for specific fragments.
+ * The original header's value contains the name of the general path of the query
+ * (can be with wildcard or just a directory name), and this value is changed here
+ * to the specific source name of each fragment name.
+ * 2. X-GP-FRAGMENT-USER-DATA header is changed to the current fragment's user data.
+ * If the fragment doesn't have user data, the header will be removed.
+ */
+static void set_current_fragment_headers(gphadoop_context* context)
+{
+    FragmentData* frag_data = (FragmentData*)lfirst(context->current_fragment);
+    elog(DEBUG2, "pxf: set_current_fragment_source_name: source_name %s, index %s, has user data: %s ",
+         frag_data->source_name, frag_data->index, frag_data->user_data ? "TRUE" : "FALSE");
+
+    churl_headers_override(context->churl_headers, "X-GP-DATA-DIR", frag_data->source_name);
+    churl_headers_override(context->churl_headers, "X-GP-DATA-FRAGMENT", frag_data->index);
+    churl_headers_override(context->churl_headers, "X-GP-FRAGMENT-METADATA", frag_data->fragment_md);
+    churl_headers_override(context->churl_headers, "X-GP-FRAGMENT-INDEX", frag_data->index);
+
+    if (frag_data->user_data)
+    {
+        churl_headers_override(context->churl_headers, "X-GP-FRAGMENT-USER-DATA", frag_data->user_data);
+    }
+    else
+    {
+        churl_headers_remove(context->churl_headers, "X-GP-FRAGMENT-USER-DATA", true);
+    }
+
+    if (frag_data->profile)
+    {
+        /* if current fragment has optimal profile set it*/
+        churl_headers_override(context->churl_headers, "X-GP-PROFILE", frag_data->profile);
+        elog(DEBUG2, "pxf: set_current_fragment_headers: using profile: %s", frag_data->profile);
+
+    } else if (context->gphd_uri->profile)
+    {
+        /* if current fragment doesn't have any optimal profile, set to use profile from url */
+        churl_headers_override(context->churl_headers, "X-GP-PROFILE", context->gphd_uri->profile);
+        elog(DEBUG2, "pxf: set_current_fragment_headers: using profile: %s", context->gphd_uri->profile);
+    }
+    /* if there is no profile passed in url, we expect to have accessor+fragmenter+resolver so no action needed by this point */
+
+}
+
 int
 gpbridge_read(gphadoop_context *context, char *databuf, int datalen)
 {
@@ -114,7 +160,7 @@ gpbridge_read(gphadoop_context *context, char *databuf, int datalen)
             return 0;
         }
 
-        //set_current_fragment_headers(context);
+        set_current_fragment_headers(context);
         churl_download_restart(context->churl_handle, context->uri.data, context->churl_headers);
 
         /* read some bytes to make sure the connection is established */
@@ -137,7 +183,7 @@ fill_buffer(gphadoop_context *context, char *start, size_t size)
 
     while (ptr < end)
     {
-        n = churl_read(/*context->churl_handle,*/ context, ptr, end - ptr);
+        n = churl_read(context->churl_handle, ptr, end - ptr);
         if (n == 0)
             break;
 
