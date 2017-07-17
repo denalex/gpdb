@@ -14,10 +14,23 @@ include $(top_builddir)/src/Makefile.global
 include $(top_srcdir)/contrib/contrib-global.mk
 endif
 
+#override CPPFLAGS := -I/usr/local/opt/curl/include $(CPPFLAGS)
+#override LDFLAGS := -L/usr/local/opt/curl/lib $(LDFLAGS)
+
 SHLIB_LINK += -lcurl
 
-unittest-check:
-	$(MAKE) -C test check
+#OS := $(shell uname)
+#ifeq ($(OS),Darwin)
+# Run MacOS commands
+#override LDFLAGS := -L/usr/local/opt/curl/lib $(LDFLAGS)
+#CPPFLAGS="-I/usr/local/opt/curl/include $CPPFLAGS"
+#PG_CPPFLAGS=-I/usr/local/opt/curl/include
+#else
+# check for Linux and run other commands
+#endif
+
+#unittest-check:
+#	$(MAKE) -C test check
 
 unittest-clean:
 	$(MAKE) -C test clean
