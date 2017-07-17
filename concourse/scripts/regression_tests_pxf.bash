@@ -71,8 +71,8 @@ function _main() {
 	time make_cluster
 	time gen_env
 
+    time setup_singlecluster
 	time run_regression_test
-  time setup_singlecluster
 }
 
 _main "$@"
