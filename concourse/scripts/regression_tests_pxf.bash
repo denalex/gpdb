@@ -45,7 +45,7 @@ function setup_singlecluster() {
   pushd /home/gpadmin
     wget https://s3-us-west-2.amazonaws.com/pivotal-singlecluster/singlecluster/singlecluster-HDP.tar.gz
     tar xzf singlecluster-HDP.tar.gz
-    pushd singlecluster-HDP
+    pushd singlecluster-HDP/bin
       # set Standalone PXF mode without Hadoop
       export PXFDEMO=true
       ./init-pxf.sh
