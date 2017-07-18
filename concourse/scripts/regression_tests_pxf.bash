@@ -43,14 +43,15 @@ function setup_gpadmin_user() {
 
 function setup_singlecluster() {
   pushd /home/gpadmin
-  wget https://s3-us-west-2.amazonaws.com/pivotal-singlecluster/singlecluster/singlecluster-HDP.tar.gz
-  tar xzf singlecluster-HDP.tar.gz
-  pushd singlecluster-HDP/bin
-  ./init-pxf.sh
-
-  # set Standalone PXF mode without Hadoop
-  export PXFDEMO=true
-  ./start-pxf.sh
+    wget https://s3-us-west-2.amazonaws.com/pivotal-singlecluster/singlecluster/singlecluster-HDP.tar.gz
+    tar xzf singlecluster-HDP.tar.gz
+    pushd singlecluster-HDP
+      # set Standalone PXF mode without Hadoop
+      export PXFDEMO=true
+      ./init-pxf.sh
+      ./start-pxf.sh
+    popd
+  popd
 }
 
 function _main() {
