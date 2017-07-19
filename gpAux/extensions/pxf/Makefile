@@ -31,8 +31,8 @@ SHLIB_LINK += -lcurl
 # check for Linux and run other commands
 #endif
 
-#unittest-check:
-#	$(MAKE) -C test check
+unittest-check:
+	$(MAKE) -C test check
 
 unittest-clean:
 	$(MAKE) -C test clean
