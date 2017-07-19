@@ -8,6 +8,10 @@
 
 /* include unit under test */
 #include "../src/pxfprotocol.c"
+#include "../src/pxfbridge.h"
+
+const char* uri_param = "pxf://localhost:51200/tmp/dummy1";
+const char* uri_param_segwork = "pxf://localhost:51200/tmp/dummy1&segwork=46@127.0.0.1@51200@tmp/dummy1.1@0@ZnJhZ21lbnQx@@@";
 
 void
 test_pxfprotocol_validate_urls(void **state)
@@ -33,8 +37,21 @@ test_pxfprotocol_import_first_call(void **state)
     EXTPROTOCOL_GET_DATALEN(fcinfo) = 100;
     EXTPROTOCOL_GET_DATABUF(fcinfo) = palloc0(EXTPROTOCOL_GET_DATALEN(fcinfo));
     ((ExtProtocolData*) fcinfo->context)->prot_last_call = false;
+    ((ExtProtocolData*) fcinfo->context)->prot_url = uri_param;
 
-    /* set mock behavior for bridge */
+    Relation relation = (Relation) palloc0(sizeof(Relation));
+    ((ExtProtocolData*) fcinfo->context)->prot_relation = relation;
+
+    /* set mock behavior for uri parsing */
+    GPHDUri* gphd_uri = palloc0(sizeof(GPHDUri));
+    expect_string(parseGPHDUri, uri_str, uri_param_segwork);
+    will_return(parseGPHDUri, gphd_uri);
+
+    /* set mock behavior for bridge import start -- nothing here */
+    expect_any(gpbridge_import_start, context);
+    will_be_called(gpbridge_import_start);
+
+    /* set mock behavior for bridge read */
     const int EXPECTED_SIZE = 31; // expected number of bytes read from the bridge
     expect_any(gpbridge_read, context);
     expect_value(gpbridge_read, databuf, EXTPROTOCOL_GET_DATABUF(fcinfo));
@@ -44,9 +61,17 @@ test_pxfprotocol_import_first_call(void **state)
     Datum d = pxfprotocol_import(fcinfo);
 
     assert_int_equal(DatumGetInt32(d), EXPECTED_SIZE);     // return number of bytes read from the bridge
-    assert_true(EXTPROTOCOL_GET_USER_CTX(fcinfo) != NULL); // context has been created
+    gphadoop_context* context = (gphadoop_context *) EXTPROTOCOL_GET_USER_CTX(fcinfo);
+    assert_true(context != NULL); // context has been created
+    assert_true(context->gphd_uri != NULL); // gphduri has been parsed
+    assert_true(context->uri.data != NULL); // uri has been initialized
+    assert_int_equal(context->write_file_name.len, 0); // no write file name for import case
+    assert_true(context->relation != NULL);
+    assert_int_equal(context->relation, relation); // relation pointer is copied
 
     /* cleanup */
+    pfree(relation);
+    pfree(gphd_uri);
     pfree(EXTPROTOCOL_GET_USER_CTX(fcinfo));
     pfree(EXTPROTOCOL_GET_DATABUF(fcinfo));
     pfree(fcinfo->context);
@@ -66,7 +91,7 @@ test_pxfprotocol_import_second_call(void **state)
     gphadoop_context *call_context = palloc0(sizeof(gphadoop_context));
     EXTPROTOCOL_SET_USER_CTX(fcinfo, call_context);
 
-    /* set mock behavior for bridge */
+    /* set mock behavior for bridge read */
     const int EXPECTED_SIZE = 0; // expected number of bytes read from the bridge
     expect_value(gpbridge_read, context, call_context);
     expect_value(gpbridge_read, databuf, EXTPROTOCOL_GET_DATABUF(fcinfo));
@@ -96,6 +121,14 @@ test_pxfprotocol_import_last_call(void **state)
     EXTPROTOCOL_SET_USER_CTX(fcinfo, call_context);
     EXTPROTOCOL_SET_LAST_CALL(fcinfo);
 
+    /* init data in context that will be cleaned up */
+    initStringInfo(&call_context->uri);
+    initStringInfo(&call_context->write_file_name);
+
+    /* set mock behavior for bridge cleanup */
+    expect_value(gpbridge_cleanup, context, call_context);
+    will_be_called(gpbridge_cleanup);
+
     Datum d = pxfprotocol_import(fcinfo);
 
     assert_int_equal(DatumGetInt32(d), 0);                 // 0 is returned from function
@@ -108,9 +141,13 @@ test_pxfprotocol_import_last_call(void **state)
 
 /* mock functions for pxfbridge.h */
 void gpbridge_cleanup(gphadoop_context *context) {
+    check_expected(context);
+    mock();
 }
 
 void gpbridge_import_start(gphadoop_context *context) {
+    check_expected(context);
+    mock();
 }
 
 int gpbridge_read(gphadoop_context *context, char *databuf, int datalen) {
@@ -118,6 +155,21 @@ int gpbridge_read(gphadoop_context *context, char *databuf, int datalen) {
     check_expected(databuf);
     check_expected(datalen);
     return (int) mock();
+}
+
+/* mock functions for pxfuriparser.h */
+GPHDUri* parseGPHDUri(const char *uri_str) {
+    check_expected(uri_str);
+    return (GPHDUri	*) mock();
+}
+
+/* test setup and teardown methods */
+void before_test(void) {
+    // set global variables
+    GpIdentity.segindex = 0;
+}
+void after_test(void) {
+    // no-op, but the teardown seems to be required when the test fails, otherwise CMockery issues a mismatch error
 }
 
 int
@@ -128,9 +180,9 @@ main(int argc, char* argv[])
     const UnitTest tests[] = {
             unit_test(test_pxfprotocol_validate_urls),
             unit_test(test_pxfprotocol_export),
-            unit_test(test_pxfprotocol_import_first_call),
-            unit_test(test_pxfprotocol_import_second_call),
-            unit_test(test_pxfprotocol_import_last_call)
+            unit_test_setup_teardown(test_pxfprotocol_import_first_call, before_test, after_test),
+            unit_test_setup_teardown(test_pxfprotocol_import_second_call, before_test, after_test),
+            unit_test_setup_teardown(test_pxfprotocol_import_last_call, before_test, after_test)
     };
 
     MemoryContextInit();
