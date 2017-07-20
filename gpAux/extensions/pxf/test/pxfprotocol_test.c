@@ -8,7 +8,10 @@
 
 /* include unit under test */
 #include "../src/pxfprotocol.c"
-#include "../src/pxfbridge.h"
+
+/* include mock files */
+#include "mock/pxfbridge_mock.c"
+#include "mock/pxfuriparser_mock.c"
 
 const char* uri_param = "pxf://localhost:51200/tmp/dummy1";
 const char* uri_param_segwork = "pxf://localhost:51200/tmp/dummy1&segwork=46@127.0.0.1@51200@tmp/dummy1.1@0@ZnJhZ21lbnQx@@@";
@@ -137,30 +140,6 @@ test_pxfprotocol_import_last_call(void **state)
     /* cleanup */
     pfree(fcinfo->context);
     pfree(fcinfo);
-}
-
-/* mock functions for pxfbridge.h */
-void gpbridge_cleanup(gphadoop_context *context) {
-    check_expected(context);
-    mock();
-}
-
-void gpbridge_import_start(gphadoop_context *context) {
-    check_expected(context);
-    mock();
-}
-
-int gpbridge_read(gphadoop_context *context, char *databuf, int datalen) {
-    check_expected(context);
-    check_expected(databuf);
-    check_expected(datalen);
-    return (int) mock();
-}
-
-/* mock functions for pxfuriparser.h */
-GPHDUri* parseGPHDUri(const char *uri_str) {
-    check_expected(uri_str);
-    return (GPHDUri	*) mock();
 }
 
 /* test setup and teardown methods */

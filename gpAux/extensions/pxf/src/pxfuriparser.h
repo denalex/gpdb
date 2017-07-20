@@ -84,15 +84,7 @@ typedef struct GPHDUri
 } GPHDUri;
 
 GPHDUri	*parseGPHDUri(const char *uri_str);
-GPHDUri	*parseGPHDUriForMetadata(char *uri_str);
 void 	 freeGPHDUri(GPHDUri *uri);
-void 	 freeGPHDUriForMetadata(GPHDUri *uri);
-char	*GPHDUri_dup_without_segwork(const char* uri);
-void	 GPHDUri_debug_print(GPHDUri *uri);
-int		 GPHDUri_get_value_for_opt(GPHDUri *uri, char *key, char **val, bool emit_error);
-bool 	 RelationIsExternalPxfReadOnly(Relation rel, StringInfo location);
-void 	 GPHDUri_verify_no_duplicate_options(GPHDUri *uri);
-void 	 GPHDUri_verify_core_options_exist(GPHDUri *uri, List *coreOptions);
 char* normalize_key_name(const char* key);
 
 #endif	// _PXF_URIPARSER_H_
