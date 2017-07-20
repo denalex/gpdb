@@ -38,11 +38,14 @@ static void  GPHDUri_free_options(GPHDUri *uri);
 static void  GPHDUri_parse_segwork(GPHDUri *uri, const char *uri_str);
 static List* GPHDUri_parse_fragment(char* fragment, List* fragments);
 static void  GPHDUri_free_fragments(GPHDUri *uri);
-static void  GPHDUri_debug_print_options(GPHDUri *uri);
-static void  GPHDUri_debug_print_segwork(GPHDUri *uri);
+
+
+static char	*GPHDUri_dup_without_segwork(const char* uri);
+
+
 //TODO restore HA logic
 //static void  GPHDUri_fetch_authority_from_ha_nn(GPHDUri *uri, char *nameservice);
-char* normalize_key_name(const char* key);
+
 
 /* parseGPHDUri
  *
@@ -86,31 +89,6 @@ parseGPHDUri(const char *uri_str)
 	return uri;
 }
 
-/* parseGPHDUriForMetadata
- *
- * Go over a URI string and parse it into its various components while
- * verifying valid structure given a specific target protocol.
- *
- * URI format:
- * 		<authority>/
-
- * authority		- host:port
- * inputs:
- * 		'uri_str'	- the raw uri str
- *
- * returns:
- * 		a parsed uri as a GPHDUri structure, or reports a format error.
- */
-GPHDUri*
-parseGPHDUriForMetadata(char *uri_str)
-{
-	GPHDUri	*uri = (GPHDUri *)palloc0(sizeof(GPHDUri));
-
-	uri->uri = pstrdup(uri_str);
-	GPHDUri_parse_authority(uri, &uri_str);
-	return uri;
-}
-
 void
 freeGPHDUri(GPHDUri *uri)
 {
@@ -132,140 +110,6 @@ freeGPHDUri(GPHDUri *uri)
 	 */
 
 	pfree(uri);
-}
-
-void
-freeGPHDUriForMetadata(GPHDUri *uri)
-{
-
-	pfree(uri->host);
-	pfree(uri->port);
-	if (uri->profile)
-		pfree(uri->profile);
-
-	pfree(uri);
-}
-
-/*
- * GPHDUri_get_value_for_opt
- *
- * Given a key, find the matching val and assign it to 'val'.
- * If 'emit_error' is set, report an error and quit if the
- * requested key or its value is missing.
- *
- * Returns 0 if the key was found, -1 otherwise.
- */
-int
-GPHDUri_get_value_for_opt(GPHDUri *uri, char *key, char **val, bool emit_error)
-{
-	ListCell	*item;
-
-	foreach(item, uri->options)
-	{
-		OptionData *data = (OptionData*)lfirst(item);
-
-		if (pg_strcasecmp(data->key, key) == 0)
-		{
-			*val = data->value;
-
-			if (emit_error && !(*val))
-				ereport(ERROR,
-						(errcode(ERRCODE_SYNTAX_ERROR),
-						 errmsg("No value assigned to the %s option in "
-								"%s", key, uri->uri)));
-
-			return 0;
-		}
-	}
-
-	if (emit_error)
-		ereport(ERROR,
-				(errcode(ERRCODE_SYNTAX_ERROR),
-				 errmsg("Missing %s option in %s", key, uri->uri)));
-
-	return -1;
-}
-
-/*
- * GPHDUri_verify_no_duplicate_options
- * verify each option appears only once (case insensitive)
- */
-void
-GPHDUri_verify_no_duplicate_options(GPHDUri *uri)
-{
-	ListCell *option = NULL;
-	List *duplicateKeys = NIL;
-	List *previousKeys = NIL;
-	StringInfoData duplicates;
-	initStringInfo(&duplicates);
-
-	foreach(option, uri->options)
-	{
-		OptionData *data = (OptionData*)lfirst(option);
-		Value *key = makeString(str_toupper(data->key, strlen(data->key)));
-
-		if(!list_member(previousKeys, key))
-		{
-			previousKeys = lappend(previousKeys, key);
-		}	
-		else if(!list_member(duplicateKeys, key))
-		{
-			duplicateKeys = lappend(duplicateKeys, key);
-			appendStringInfo(&duplicates, "%s, ", strVal(key));
-		}
-	}
-
-	if(duplicates.len > 0)
-	{
-		truncateStringInfo(&duplicates, duplicates.len - strlen(", ")); //omit trailing ', ' 
-		ereport(ERROR,
-				(errcode(ERRCODE_SYNTAX_ERROR),
-					 errmsg("Invalid URI %s: Duplicate option(s): %s", uri->uri, duplicates.data)));
-	}
-	list_free(duplicateKeys);
-	list_free(previousKeys);
-	pfree(duplicates.data);
-}
-
-/*
- * GPHDUri_verify_core_options_exist
- * This function is given a list of core options to verify their existence.
- */
-void
-GPHDUri_verify_core_options_exist(GPHDUri *uri, List *coreOptions)
-{
-	char *key = NULL;
-	ListCell *coreOption = NULL;	
-	StringInfoData missing;
-	initStringInfo(&missing);
-	
-	foreach(coreOption, coreOptions)
-	{
-		bool optExist = false;
-		ListCell *option = NULL;
-		foreach(option, uri->options)
-		{
-			key = ((OptionData*)lfirst(option))->key;
-			if (pg_strcasecmp(key, lfirst(coreOption)) == 0)
-			{
-				optExist = true;
-				break;
-			}
-		}
-		if(!optExist)
-		{
-			appendStringInfo(&missing, "%s and ", (char*)lfirst(coreOption));
-		}
-	}
-
-	if(missing.len > 0)
-	{
-		truncateStringInfo(&missing, missing.len - strlen(" and ")); //omit trailing ' and ' 
-		ereport(ERROR,
-				(errcode(ERRCODE_SYNTAX_ERROR),
-					 errmsg("Invalid URI %s: PROFILE or %s option(s) missing", uri->uri, missing.data)));
-	}
-	pfree(missing.data);		
 }
 
 /*
@@ -571,85 +415,6 @@ GPHDUri_free_options(GPHDUri *uri)
 }
 
 /*
- * GPHDUri_debug_print
- *
- * For debugging while development only.
- */
-void
-GPHDUri_debug_print(GPHDUri *uri)
-{
-
-	elog(NOTICE,
-		 "URI: %s, Host: %s, Port: %s, Data Path: %s",
-		 uri->uri,
-		 uri->host,
-		 uri->port,
-		 uri->data);
-
-	if (uri->profile)
-	{
-		elog(NOTICE, "Profile: %s", uri->profile);
-	}
-
-	GPHDUri_debug_print_options(uri);
-	GPHDUri_debug_print_segwork(uri);
-}
-
-/*
- * GPHDUri_debug_print_options
- *
- * For debugging while development only.
- */
-void
-GPHDUri_debug_print_options(GPHDUri *uri)
-{
-	ListCell	*item;
-	int			count = 0;
-
-	elog(NOTICE, "options section data: ");
-	foreach(item, uri->options)
-	{
-		OptionData *data = (OptionData*)lfirst(item);
-		elog(NOTICE,
-			 "%u: key: %s, value: %s",
-			 count, data->key, data->value);
-		++count;
-	}
-}
-
-/*
- * GPHDUri_debug_print_segwork
- *
- * For debugging while development only.
- */
-void
-GPHDUri_debug_print_segwork(GPHDUri *uri)
-{
-	ListCell	*item;
-	int			count = 0;
-	StringInfoData fragment_data;
-	initStringInfo(&fragment_data);
-
-	elog(NOTICE, "segwork section data: ");
-	foreach(item, uri->fragments)
-	{
-		FragmentData *data = (FragmentData*)lfirst(item);
-		appendStringInfo(&fragment_data, "%u: authority: %s, index %s",
-				         count, data->authority, data->index);
-		appendStringInfo(&fragment_data, ", fragment metadata: %s",
-				 	 	 data->fragment_md ? data->fragment_md : "NULL");
-		if (data->user_data)
-			appendStringInfo(&fragment_data, ", user data : %s", data->user_data);
-		if (data->profile)
-			appendStringInfo(&fragment_data, ", profile : %s", data->profile);
-		elog(NOTICE, "%s", fragment_data.data);
-		++count;
-		resetStringInfo(&fragment_data);
-	}
-	pfree(fragment_data.data);
-}
-
-/*
  * GPHDUri_parse_segwork parses the segwork section of the uri.
  * ...&segwork=<size>@<ip>@<port>@<index><size>@<ip>@<port>@<index><size>...
  */
@@ -840,7 +605,7 @@ GPHDUri_free_fragments(GPHDUri *uri)
  * segwork section removed so users won't get it 
  * when an error occurs and the uri is printed
  */
-char*
+static char*
 GPHDUri_dup_without_segwork(const char* uri)
 {
 	char	*segwork;
@@ -862,52 +627,6 @@ GPHDUri_dup_without_segwork(const char* uri)
 	return no_segwork;
 }
 
-/* --------------------------------
- *		RelationIsExternalPxf -
- *
- *		Check if a table is a readable external PXF tbl.
- * --------------------------------
- */
-bool RelationIsExternalPxfReadOnly(Relation rel, StringInfo location)
-{
-	ExtTableEntry	*tbl;
-	List			*locsList;
-	ListCell		*cell;
-
-	if (!RelationIsExternal(rel))
-		return false;
-
-	tbl = GetExtTableEntry(rel->rd_id);
-	Assert(tbl);
-
-	/* Nothing to do for writable tables */
-	if (tbl->iswritable)
-	{
-		elog(DEBUG2, "RelationIsExternalPxfReadOnly: relation %s is writable external table",
-			 RelationGetRelationName(rel));
-		return false;
-	}
-
-	locsList = tbl->urilocations;
-
-	foreach(cell, locsList)
-	{
-		char* locsItem = strVal(lfirst(cell));
-
-		if (!locsItem)
-			continue;
-
-		if (IS_PXF_URI(locsItem))
-		{
-			appendStringInfoString(location, locsItem);
-			pfree(tbl);
-			return true;
-		}
-	}
-	pfree(tbl);
-
-	return false;
-}
 
 /*
  * Full name of the HEADER KEY expected by the PXF service

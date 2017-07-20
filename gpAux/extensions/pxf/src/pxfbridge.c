@@ -19,10 +19,9 @@
  */
 
 #include "pxfbridge.h"
-#include "access/extprotocol.h"
-#include "pxfuriparser.h"
 #include "pxfheaders.h"
 
+/* helper function declarations */
 static void build_uri_for_read(gphadoop_context* context);
 static void add_querydata_to_http_headers(gphadoop_context* context);
 static void set_current_fragment_headers(gphadoop_context* context);
@@ -192,21 +191,3 @@ fill_buffer(gphadoop_context *context, char *start, size_t size)
 
     return ptr - start;
 }
-
-/*
-// TODO: mock function, remove when real from libchurl is ported
-static size_t
-churl_read(gphadoop_context *context, char *ptr, size_t size) {
-
-    if (context->row_count > 0) {
-        PXFLOG("no more data to read");
-        return 0;
-    }
-    (context->row_count)++;
-
-    PXFLOG("produce tuple");
-
-    snprintf(ptr, size, "%d,hello world %d", GpIdentity.segindex, GpIdentity.segindex);
-    return strlen(ptr);
-}
- */
