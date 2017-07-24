@@ -1,5 +1,5 @@
 CHURL_HEADERS churl_headers_init(void) {
-    mock();
+    return (CHURL_HEADERS) mock();
 }
 
 void churl_headers_append(CHURL_HEADERS headers,
