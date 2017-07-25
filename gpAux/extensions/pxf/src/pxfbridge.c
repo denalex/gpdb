@@ -32,7 +32,6 @@ static size_t fill_buffer(gphadoop_context *context, char *start, size_t size);
  */
 void gpbridge_cleanup(gphadoop_context *context)
 {
-    PXFLOG("bridge cleanup");
     if (context == NULL)
         return;
 
@@ -143,19 +142,15 @@ gpbridge_read(gphadoop_context *context, char *databuf, int datalen)
 {
     size_t n = 0;
 
-    PXFLOG("bridge read");
     while ((n = fill_buffer(context, databuf, datalen)) == 0)
     {
         /* done processing all data for current fragment -
          * check if the connection terminated with an error */
         churl_read_check_connectivity(context->churl_handle);
 
-        PXFLOG("before next fragment");
         /* start processing next fragment */
         context->current_fragment = lnext(context->current_fragment);
-        PXFLOG("after next fragment");
         if (context->current_fragment == NULL) {
-            PXFLOG("no more fragments");
             return 0;
         }
 
@@ -166,7 +161,6 @@ gpbridge_read(gphadoop_context *context, char *databuf, int datalen)
         churl_read_check_connectivity(context->churl_handle);
     }
 
-    PXFLOG("bridge read %d bytes", n);
     return (int) n;
 
 }
@@ -174,7 +168,6 @@ gpbridge_read(gphadoop_context *context, char *databuf, int datalen)
 static size_t
 fill_buffer(gphadoop_context *context, char *start, size_t size)
 {
-    PXFLOG("fill buffer");
 
     size_t n = 0;
     char* ptr = start;
