@@ -21,9 +21,11 @@
 
 #include "catalog/catalog.h"
 #include "catalog/pg_tablespace.h"
+#include "commands/copy.h"
 #include "commands/dbcommands.h"
 #include "miscadmin.h"
 #include "utils/builtins.h"
+#include "utils/formatting.h"
 #include "utils/syscache.h"
 #include <net/if.h>
 #include <ifaddrs.h>
@@ -224,6 +226,29 @@ char* replace_string(const char* string, const char* replace, const char* replac
 	}
 
 	return replaced;
+}
+
+/*
+ * Full name of the HEADER KEY expected by the PXF service
+ * Converts input string to upper case and prepends "X-GP-" string
+ *
+ */
+char* normalize_key_name(const char* key)
+{
+	if (!key || strlen(key) == 0)
+	{
+		ereport(ERROR,
+				(errcode(ERRCODE_INTERNAL_ERROR),
+						errmsg("internal error in pxfheaders.c:normalize_key_name. Parameter key is null or empty.")));
+	}
+
+	StringInfoData formatter;
+	initStringInfo(&formatter);
+	char* upperCasedKey = str_toupper(pstrdup(key), strlen(key));
+	appendStringInfo(&formatter, "X-GP-%s", upperCasedKey);
+	pfree(upperCasedKey);
+
+	return formatter.data;
 }
 
 /*

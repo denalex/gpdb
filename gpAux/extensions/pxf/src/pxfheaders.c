@@ -252,7 +252,7 @@ static void add_location_options_httpheader(CHURL_HEADERS headers, GPHDUri *gphd
 	}
 }
 
-char* get_format_name(char fmtcode)
+static char* get_format_name(char fmtcode)
 {
 	char *formatName = NULL;
 
