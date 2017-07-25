@@ -85,6 +85,5 @@ typedef struct GPHDUri
 
 GPHDUri	*parseGPHDUri(const char *uri_str);
 void 	 freeGPHDUri(GPHDUri *uri);
-char* normalize_key_name(const char* key);
 
 #endif	// _PXF_URIPARSER_H_

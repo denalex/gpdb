@@ -38,8 +38,6 @@ static void  GPHDUri_free_options(GPHDUri *uri);
 static void  GPHDUri_parse_segwork(GPHDUri *uri, const char *uri_str);
 static List* GPHDUri_parse_fragment(char* fragment, List* fragments);
 static void  GPHDUri_free_fragments(GPHDUri *uri);
-
-
 static char	*GPHDUri_dup_without_segwork(const char* uri);
 
 
@@ -627,26 +625,3 @@ GPHDUri_dup_without_segwork(const char* uri)
 	return no_segwork;
 }
 
-
-/*
- * Full name of the HEADER KEY expected by the PXF service
- * Converts input string to upper case and prepends "X-GP-" string
- *
- */
-char* normalize_key_name(const char* key)
-{
-	if (!key || strlen(key) == 0)
-	{
-		ereport(ERROR,
-			(errcode(ERRCODE_INTERNAL_ERROR),
-			 errmsg("internal error in pxfheaders.c:normalize_key_name. Parameter key is null or empty.")));
-	}
-
-	StringInfoData formatter;
-	initStringInfo(&formatter);
-	char* upperCasedKey = str_toupper(pstrdup(key), strlen(key));
-	appendStringInfo(&formatter, "X-GP-%s", upperCasedKey);
-	pfree(upperCasedKey);
-
-	return formatter.data;
-}

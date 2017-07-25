@@ -22,7 +22,6 @@
 #include "postgres.h"
 #include "libchurl.h"
 #include "pxfuriparser.h"
-#include "commands/copy.h"
 
 typedef struct sClientContext
 {
@@ -51,6 +50,9 @@ char* get_loopback_ip_addr(void);
 
 /* replace first occurrence of replace in string with replacement*/
 char* replace_string(const char* string, const char* replace, const char* replacement);
+
+/* convert input string to upper case and prepend "X-GP-" prefix */
+char* normalize_key_name(const char* key);
 
 /* get the name of the type, given the OID */
 char* TypeOidGetTypename(Oid typid);
