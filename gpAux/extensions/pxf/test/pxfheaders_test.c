@@ -19,6 +19,7 @@ static void expect_headers_append(CHURL_HEADERS headers_handle, const char* head
 void
 test_build_http_headers(void **state) {
 
+    /* setup mock data and expectations */
     PxfInputData *input = (PxfInputData *) palloc0(sizeof(PxfInputData));
     CHURL_HEADERS headers = (CHURL_HEADERS) palloc0(sizeof(CHURL_HEADERS));
     GPHDUri *gphd_uri = (GPHDUri *) palloc0(sizeof(GPHDUri));
@@ -75,8 +76,12 @@ test_build_http_headers(void **state) {
     expect_headers_append(headers, "X-GP-URI", gphd_uri->uri);
     expect_headers_append(headers, "X-GP-HAS-FILTER", "0");
 
+    /* call function under test */
     build_http_headers(input);
 
+    /* no asserts as the function just calls to set headers */
+
+    /* cleanup */
     pfree(rel);
     pfree(gphd_uri);
     pfree(headers);
@@ -86,6 +91,7 @@ test_build_http_headers(void **state) {
 void
 test_add_tuple_desc_httpheader(void **state) {
 
+    /* setup mock data and expectations */
     CHURL_HEADERS headers = (CHURL_HEADERS) palloc0(sizeof(CHURL_HEADERS));
     Relation rel = (Relation) palloc0(sizeof(RelationData));
 
@@ -98,6 +104,8 @@ test_add_tuple_desc_httpheader(void **state) {
     FormData_pg_attribute attrs[4];
     Form_pg_attribute attrs_ptr[4];
     tuple.attrs = attrs_ptr;
+
+    /* define first attribute */
     attrs_ptr[0] = &attrs[0];
     char data0[10] = "name0";
     snprintf(NameStr(attrs[0].attname), sizeof(data0), data0);
@@ -119,6 +127,7 @@ test_add_tuple_desc_httpheader(void **state) {
     pg_ltoa((attrs[0].atttypmod - VARHDRSZ) & 0xffff, typemod01);
     expect_headers_append(headers, "X-GP-ATTR-TYPEMOD0-1", typemod01);
 
+    /* define second attribute */
     attrs_ptr[1] = &attrs[1];
     char data1[10] = "name1";
     snprintf(NameStr(attrs[1].attname), sizeof(data1), data1);
@@ -137,6 +146,7 @@ test_add_tuple_desc_httpheader(void **state) {
     pg_ltoa((attrs[1].atttypmod - VARHDRSZ), typemod10);
     expect_headers_append(headers, "X-GP-ATTR-TYPEMOD1-0", typemod10);
 
+    /* define third attribute */
     attrs_ptr[2] = &attrs[2];
     char data2[10] = "name2";
     snprintf(NameStr(attrs[2].attname), sizeof(data2), data2);
@@ -155,6 +165,7 @@ test_add_tuple_desc_httpheader(void **state) {
     pg_ltoa(attrs[2].atttypmod, typemod20);
     expect_headers_append(headers, "X-GP-ATTR-TYPEMOD2-0", typemod20);
 
+    /* define fourth attribute */
     attrs_ptr[3] = &attrs[3];
     char data3[10] = "name3";
     snprintf(NameStr(attrs[3].attname), sizeof(data3), data3);
@@ -172,19 +183,15 @@ test_add_tuple_desc_httpheader(void **state) {
     char typemod30[10];
     pg_ltoa(INTERVAL_PRECISION(attrs[3].atttypmod), typemod30);
     expect_headers_append(headers, "X-GP-ATTR-TYPEMOD3-0", typemod30);
+
+    /* call function under test */
     add_tuple_desc_httpheader(headers, rel);
 
+    /* no asserts as the function just calls to set headers */
+
+    /* cleanup */
     pfree(rel);
     pfree(headers);
-}
-
-static void
-expect_headers_append(CHURL_HEADERS headers_handle, const char* header_key, const char* header_value)
-{
-    expect_value(churl_headers_append, headers, headers_handle);
-    expect_string(churl_headers_append, key, header_key);
-    expect_string(churl_headers_append, value, header_value);
-    will_be_called(churl_headers_append);
 }
 
 void
@@ -218,13 +225,12 @@ test_get_format_name(void **state)
 }
 
 static void
-setup_external_vars()
+expect_headers_append(CHURL_HEADERS headers_handle, const char* header_key, const char* header_value)
 {
-    extvar_t *mock_extvar = palloc0(sizeof(extvar_t));
-
-    snprintf(mock_extvar->GP_SEGMENT_ID, sizeof(mock_extvar->GP_SEGMENT_ID), "badID");
-    snprintf(mock_extvar->GP_SEGMENT_COUNT, sizeof(mock_extvar->GP_SEGMENT_COUNT), "lots");
-    snprintf(mock_extvar->GP_XID, sizeof(mock_extvar->GP_XID), "badXID");
+    expect_value(churl_headers_append, headers, headers_handle);
+    expect_string(churl_headers_append, key, header_key);
+    expect_string(churl_headers_append, value, header_value);
+    will_be_called(churl_headers_append);
 }
 
 int
