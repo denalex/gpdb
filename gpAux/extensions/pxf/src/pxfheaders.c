@@ -53,7 +53,7 @@ void build_http_headers(PxfInputData *input)
         /* pxf treats CSV as TEXT */
 		char* format = get_format_name(exttbl->fmtcode);
 		churl_headers_append(headers, "X-GP-FORMAT", format);
-		
+
 		/* Record fields - name and type of each field */
 		add_tuple_desc_httpheader(headers, rel);
 	}
@@ -136,16 +136,16 @@ static void add_tuple_desc_httpheader(CHURL_HEADERS headers, Relation rel)
 	
     /* Iterate attributes */	
     for (int i = 0; i < tuple->natts; ++i)		
-    {		
-        /* Add a key/value pair for attribute name */		
+    {
+        /* Add a key/value pair for attribute name */
         resetStringInfo(&formatter);		
-        appendStringInfo(&formatter, "X-GP-ATTR-NAME%u", i);		
+        appendStringInfo(&formatter, "X-GP-ATTR-NAME%u", i);
         churl_headers_append(headers, formatter.data, tuple->attrs[i]->attname.data);
-		
-		/* Add a key/value pair for attribute type */		
+
+		/* Add a key/value pair for attribute type */
         resetStringInfo(&formatter);		
         appendStringInfo(&formatter, "X-GP-ATTR-TYPECODE%u", i);
-        pg_ltoa(tuple->attrs[i]->atttypid, long_number);		
+        pg_ltoa(tuple->attrs[i]->atttypid, long_number);
         churl_headers_append(headers, formatter.data, long_number);
 
         /* Add a key/value pair for attribute type name */
@@ -231,7 +231,7 @@ static void add_tuple_desc_httpheader(CHURL_HEADERS headers, Relation rel)
 			}
 		}
 	}
-	
+
 	pfree(formatter.data);
 }
 
