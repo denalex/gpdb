@@ -13,51 +13,40 @@
 #include "mock/libchurl_mock.c"
 #include "mock/pxfutils_mock.c"
 
-/*
-void build_http_headers(PxfInputData *input)
-{
-
-    churl_headers_append(headers, "X-GP-SEGMENT-ID", ev.GP_SEGMENT_ID);
-    churl_headers_append(headers, "X-GP-SEGMENT-COUNT", ev.GP_SEGMENT_COUNT);
-    churl_headers_append(headers, "X-GP-XID", ev.GP_XID);
-
-    add_alignment_size_httpheader(headers);
-
-    churl_headers_append(headers, "X-GP-URL-HOST", gphduri->host);
-    churl_headers_append(headers, "X-GP-URL-PORT", gphduri->port);
-    churl_headers_append(headers, "X-GP-DATA-DIR", gphduri->data);
-
-    add_location_options_httpheader(headers, gphduri);
-
-    churl_headers_append(headers, "X-GP-URI", gphduri->uri);
-
-    churl_headers_append(headers, "X-GP-HAS-FILTER", "0");
-
-}
-*/
+/* helper functions */
+static void expect_headers_append(CHURL_HEADERS headers_handle, const char* header_key, const char* header_value);
 
 void
 test_build_http_headers(void **state) {
-    //extvar_t ev;
-    PxfInputData *input = (PxfInputData *) palloc0(sizeof(PxfInputData));
-    input->headers = (CHURL_HEADERS) palloc0(sizeof(CHURL_HEADERS));
-    input->gphduri = (GPHDUri *) palloc0(sizeof(GPHDUri));
-    input->gphduri->uri = "uri";
-    input->rel = (Relation) palloc0(sizeof(RelationData));
-    ExtTableEntry ext_tbl;
-    ext_tbl.fmtcode = 'c';
-    input->rel->rd_id = 56;
-    struct tupleDesc tuple;
-    tuple.natts = 0;
-    input->rel->rd_att = &tuple;
 
-    expect_value(GetExtTableEntry, relid, input->rel->rd_id);
+    PxfInputData *input = (PxfInputData *) palloc0(sizeof(PxfInputData));
+    CHURL_HEADERS headers = (CHURL_HEADERS) palloc0(sizeof(CHURL_HEADERS));
+    GPHDUri *gphd_uri = (GPHDUri *) palloc0(sizeof(GPHDUri));
+    Relation rel = (Relation) palloc0(sizeof(RelationData));
+
+    ExtTableEntry ext_tbl;
+    struct tupleDesc tuple;
+    input->headers = headers;
+    input->gphduri = gphd_uri;
+    input->rel = rel;
+
+    gphd_uri->host = "testhost";
+    gphd_uri->port = "101";
+    gphd_uri->data = "this is test data";
+    gphd_uri->uri = "testuri";
+
+    tuple.natts = 0;
+    ext_tbl.fmtcode = 'c';
+    rel->rd_id = 56;
+    rel->rd_att = &tuple;
+
+    expect_value(GetExtTableEntry, relid, rel->rd_id);
     will_return(GetExtTableEntry, &ext_tbl);
-    expect_headers_append(input->headers, "X-GP-FORMAT", TextFormatName);
-    expect_headers_append(input->headers, "X-GP-ATTRS", "0");
+    expect_headers_append(headers, "X-GP-FORMAT", TextFormatName);
+    expect_headers_append(headers, "X-GP-ATTRS", "0");
 
     expect_any(external_set_env_vars, extvar);
-    expect_string(external_set_env_vars, uri, input->gphduri->uri);
+    expect_string(external_set_env_vars, uri, gphd_uri->uri);
     expect_value(external_set_env_vars, csv, false);
     expect_value(external_set_env_vars, escape, NULL);
     expect_value(external_set_env_vars, quote, NULL);
@@ -65,17 +54,128 @@ test_build_http_headers(void **state) {
     expect_value(external_set_env_vars, scancounter, 0);
 
     struct extvar_t mock_extvar;
-    mock_extvar.GP_SEGMENT_ID = "segID";
-    mock_extvar.GP_SEGMENT_COUNT = "10";
-    mock_extvar.GP_XID = "20";
+    snprintf(mock_extvar.GP_SEGMENT_ID, sizeof(mock_extvar.GP_SEGMENT_ID), "SegId");
+    snprintf(mock_extvar.GP_SEGMENT_COUNT, sizeof(mock_extvar.GP_SEGMENT_COUNT), "10");
+    snprintf(mock_extvar.GP_XID, sizeof(mock_extvar.GP_XID), "20");
 
     will_assign_memory(external_set_env_vars, extvar, &mock_extvar, sizeof(extvar_t));
     will_be_called(external_set_env_vars);
 
+    expect_headers_append(headers, "X-GP-SEGMENT-ID", mock_extvar.GP_SEGMENT_ID);
+    expect_headers_append(headers, "X-GP-SEGMENT-COUNT", mock_extvar.GP_SEGMENT_COUNT);
+    expect_headers_append(headers, "X-GP-XID", mock_extvar.GP_XID);
 
-    pfree(input->gphduri);
-    pfree(input->headers);
+    char alignment[3];
+    pg_ltoa(sizeof(char*), alignment);
+    expect_headers_append(headers, "X-GP-ALIGNMENT", alignment);
+    expect_headers_append(headers, "X-GP-URL-HOST", gphd_uri->host);
+    expect_headers_append(headers, "X-GP-URL-PORT", gphd_uri->port);
+    expect_headers_append(headers, "X-GP-DATA-DIR", gphd_uri->data);
+
+    expect_headers_append(headers, "X-GP-URI", gphd_uri->uri);
+    expect_headers_append(headers, "X-GP-HAS-FILTER", "0");
+
+    build_http_headers(input);
+
+    pfree(rel);
+    pfree(gphd_uri);
+    pfree(headers);
     pfree(input);
+}
+
+void
+test_add_tuple_desc_httpheader(void **state) {
+
+    CHURL_HEADERS headers = (CHURL_HEADERS) palloc0(sizeof(CHURL_HEADERS));
+    Relation rel = (Relation) palloc0(sizeof(RelationData));
+
+    struct tupleDesc tuple;
+    tuple.natts = 4;
+    rel->rd_id = 56;
+    rel->rd_att = &tuple;
+    expect_headers_append(headers, "X-GP-ATTRS", "4");
+
+    FormData_pg_attribute attrs[4];
+    Form_pg_attribute attrs_ptr[4];
+    tuple.attrs = attrs_ptr;
+    attrs_ptr[0] = &attrs[0];
+    char data0[10] = "name0";
+    snprintf(NameStr(attrs[0].attname), sizeof(data0), data0);
+    char typename0[12] = "NUMERICOID";
+    attrs[0].atttypid = NUMERICOID;
+    attrs[0].atttypmod = 10;
+    char typecode0[10];
+    pg_ltoa(attrs[0].atttypid, typecode0);
+    expect_value(TypeOidGetTypename, typid, NUMERICOID);
+    will_return(TypeOidGetTypename, &typename0);
+    expect_headers_append(headers, "X-GP-ATTR-NAME0", data0);
+    expect_headers_append(headers, "X-GP-ATTR-TYPECODE0", typecode0);
+    expect_headers_append(headers, "X-GP-ATTR-TYPENAME0", typename0);
+    expect_headers_append(headers, "X-GP-ATTR-TYPEMOD0-COUNT", "2");
+    char typemod00[10];
+    pg_ltoa((attrs[0].atttypmod >> 16) & 0xffff, typemod00);
+    expect_headers_append(headers, "X-GP-ATTR-TYPEMOD0-0", typemod00);
+    char typemod01[10];
+    pg_ltoa((attrs[0].atttypmod - VARHDRSZ) & 0xffff, typemod01);
+    expect_headers_append(headers, "X-GP-ATTR-TYPEMOD0-1", typemod01);
+
+    attrs_ptr[1] = &attrs[1];
+    char data1[10] = "name1";
+    snprintf(NameStr(attrs[1].attname), sizeof(data1), data1);
+    char typename1[12] = "CHAROID";
+    attrs[1].atttypid = CHAROID;
+    attrs[1].atttypmod = 10;
+    char typecode1[10];
+    pg_ltoa(attrs[1].atttypid, typecode1);
+    expect_value(TypeOidGetTypename, typid, CHAROID);
+    will_return(TypeOidGetTypename, &typename1);
+    expect_headers_append(headers, "X-GP-ATTR-NAME1", data1);
+    expect_headers_append(headers, "X-GP-ATTR-TYPECODE1", typecode1);
+    expect_headers_append(headers, "X-GP-ATTR-TYPENAME1", typename1);
+    expect_headers_append(headers, "X-GP-ATTR-TYPEMOD1-COUNT", "1");
+    char typemod10[10];
+    pg_ltoa((attrs[1].atttypmod - VARHDRSZ), typemod10);
+    expect_headers_append(headers, "X-GP-ATTR-TYPEMOD1-0", typemod10);
+
+    attrs_ptr[2] = &attrs[2];
+    char data2[10] = "name2";
+    snprintf(NameStr(attrs[2].attname), sizeof(data2), data2);
+    char typename2[12] = "TIMEOID";
+    attrs[2].atttypid = TIMEOID;
+    attrs[2].atttypmod = 10;
+    char typecode2[10];
+    pg_ltoa(attrs[2].atttypid, typecode2);
+    expect_value(TypeOidGetTypename, typid, TIMEOID);
+    will_return(TypeOidGetTypename, &typename2);
+    expect_headers_append(headers, "X-GP-ATTR-NAME2", data2);
+    expect_headers_append(headers, "X-GP-ATTR-TYPECODE2", typecode2);
+    expect_headers_append(headers, "X-GP-ATTR-TYPENAME2", typename2);
+    expect_headers_append(headers, "X-GP-ATTR-TYPEMOD2-COUNT", "1");
+    char typemod20[10];
+    pg_ltoa(attrs[2].atttypmod, typemod20);
+    expect_headers_append(headers, "X-GP-ATTR-TYPEMOD2-0", typemod20);
+
+    attrs_ptr[3] = &attrs[3];
+    char data3[10] = "name3";
+    snprintf(NameStr(attrs[3].attname), sizeof(data3), data3);
+    char typename3[12] = "INTERVALOID";
+    attrs[3].atttypid = INTERVALOID;
+    attrs[3].atttypmod = 10;
+    char typecode3[10];
+    pg_ltoa(attrs[3].atttypid, typecode3);
+    expect_value(TypeOidGetTypename, typid, INTERVALOID);
+    will_return(TypeOidGetTypename, &typename3);
+    expect_headers_append(headers, "X-GP-ATTR-NAME3", data3);
+    expect_headers_append(headers, "X-GP-ATTR-TYPECODE3", typecode3);
+    expect_headers_append(headers, "X-GP-ATTR-TYPENAME3", typename3);
+    expect_headers_append(headers, "X-GP-ATTR-TYPEMOD3-COUNT", "1");
+    char typemod30[10];
+    pg_ltoa(INTERVAL_PRECISION(attrs[3].atttypmod), typemod30);
+    expect_headers_append(headers, "X-GP-ATTR-TYPEMOD3-0", typemod30);
+    add_tuple_desc_httpheader(headers, rel);
+
+    pfree(rel);
+    pfree(headers);
 }
 
 static void
@@ -127,33 +227,15 @@ setup_external_vars()
     snprintf(mock_extvar->GP_XID, sizeof(mock_extvar->GP_XID), "badXID");
 }
 
-/* test setup and teardown methods */
-void
-before_test(void)
-{
-    // set global variables
-
-}
-
-void
-after_test(void)
-{
-    // no-op, but the teardown seems to be required when the test fails, otherwise CMockery issues a mismatch error
-}
-
 int
 main(int argc, char* argv[])
 {
     cmockery_parse_arguments(argc, argv);
 
     const UnitTest tests[] = {
-            /*
-            unit_test_setup_teardown(, before_test, after_test),
-            unit_test_setup_teardown(, before_test, after_test),
-            unit_test_setup_teardown(, before_test, after_test),
-            unit_test_setup_teardown(, before_test, after_test),
-            */
-            unit_test_setup_teardown(test_get_format_name, before_test, after_test)
+            unit_test(test_get_format_name),
+            unit_test(test_build_http_headers),
+            unit_test(test_add_tuple_desc_httpheader)
     };
 
     MemoryContextInit();

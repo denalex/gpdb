@@ -6,4 +6,4 @@ TARGETS=pxfprotocol pxfbridge pxfheaders
 
 include $(top_builddir)/src/backend/mock.mk
 
-pxfheaders.t: $(MOCK_DIR)/backend/access/external/fileam_mock.o
+pxfheaders.t: $(MOCK_DIR)/backend/access/external/fileam_mock.o $(MOCK_DIR)/backend/catalog/pg_exttable_mock.o
