@@ -82,3 +82,12 @@ void print_http_headers(CHURL_HEADERS headers) {
     check_expected(headers);
     mock();
 }
+
+int
+fill_internal_buffer(churl_context* context, int want)
+{
+	check_expected(context);
+	check_expected(want);
+	optional_assignment(context);
+	return (int) mock();
+}
