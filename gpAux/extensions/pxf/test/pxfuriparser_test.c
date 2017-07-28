@@ -194,6 +194,79 @@ test_GPHDUri_parse_fragment_NullFragment(void **state) {
     test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment.fragment string is null.");
 }
 
+/*
+ * Test GPHDUri_parse_fragment when fragment string has less tokens then expected
+ */
+void
+test_GPHDUri_parse_fragment_MissingIpHost(void **state) {
+
+    char* fragment = "@";
+    test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.");
+}
+
+/*
+ * Test GPHDUri_parse_fragment when fragment string has less tokens then expected
+ */
+void
+test_GPHDUri_parse_fragment_MissingPort(void **state) {
+
+    char* fragment = "@HOST@";
+    test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.");
+}
+
+/*
+ * Test GPHDUri_parse_fragment when fragment string has less tokens then expected
+ */
+void
+test_GPHDUri_parse_fragment_MissingSourceName(void **state) {
+
+    char* fragment = "@HOST@PORT@";
+    test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.");
+}
+
+/*
+ * Test GPHDUri_parse_fragment when fragment string has less tokens then expected
+ */
+void
+test_GPHDUri_parse_fragment_MissingIndex(void **state) {
+
+    char* fragment = "@HOST@PORT@SOURCE_NAME@";
+    test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.");
+}
+
+/*
+ * Test GPHDUri_parse_fragment when fragment string has less tokens then expected
+ */
+void
+test_GPHDUri_parse_fragment_MissingFragmentMetadata(void **state) {
+
+    char* fragment = "@HOST@PORT@SOURCE_NAME@42@";
+    test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.");
+}
+
+/*
+ * Test GPHDUri_parse_fragment when fragment string has less tokens then expected
+ */
+void
+test_GPHDUri_parse_fragment_MissingUserData(void **state) {
+
+    char* fragment = "HOST@REST_PORT@TABLE_NAME@INDEX@FRAGMENT_METADATA@";
+    test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.");
+}
+
+/*
+ * Test GPHDUri_parse_fragment when fragment string has less tokens then expected
+ */
+void
+test_GPHDUri_parse_fragment_MissingProfile(void **state) {
+
+    char* fragment = "HOST@REST_PORT@TABLE_NAME@INDEX@FRAGMENT_METADATA@USER_METADATA@";
+    test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.");
+}
+
+/*
+ * Helper function for parse fragment test cases
+ */
 static void
 test_parseFragment_helper(const char* fragment, const char* message) {
 
@@ -228,6 +301,9 @@ test_parseFragment_helper(const char* fragment, const char* message) {
     PG_END_TRY();
 }
 
+/*
+ * Helper function for parse uri test cases
+ */
 static void
 test_parseGPHDUri_helper(const char* uri, const char* message)
 {
@@ -283,7 +359,13 @@ main(int argc, char* argv[])
             unit_test(test_parseGPHDUri_NegativeTestMissingKey),
             unit_test(test_parseGPHDUri_NegativeTestMissingValue),
             unit_test(test_GPHDUri_parse_fragment_ValidFragment),
-            unit_test(test_GPHDUri_parse_fragment_NullFragment)
+            unit_test(test_GPHDUri_parse_fragment_NullFragment),
+            unit_test(test_GPHDUri_parse_fragment_MissingIpHost),
+            unit_test(test_GPHDUri_parse_fragment_MissingSourceName),
+            unit_test(test_GPHDUri_parse_fragment_MissingIndex),
+            unit_test(test_GPHDUri_parse_fragment_MissingFragmentMetadata),
+            unit_test(test_GPHDUri_parse_fragment_MissingUserData),
+            unit_test(test_GPHDUri_parse_fragment_MissingProfile)
     };
 
     MemoryContextInit();
