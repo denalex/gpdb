@@ -59,27 +59,6 @@ void port_to_str(char **port, int new_port)
 }
 
 /*
- * get_hdfs_location_from_filespace
- *
- * Get hdfs location from pg_filespace_entry
- * The returned path needs to be pfreed by the caller.
- */
-//TODO re-enable, if needed
-/*
-void get_hdfs_location_from_filespace(char** path)
-{
-	Assert(NULL != path);
-	Oid dtsoid = get_database_dts(MyDatabaseId);
-	GetFilespacePathForTablespace(dtsoid, path);
-
-	Assert(NULL != *path);
-	Assert(strlen(*path) < FilespaceLocationBlankPaddedWithNullTermLen);
-
-	elog(DEBUG2, "found hdfs location is %s", *path);
-}
-*/
-
-/*
  * call_rest
  *
  * Creates the REST message and sends it to the PXF service located on
