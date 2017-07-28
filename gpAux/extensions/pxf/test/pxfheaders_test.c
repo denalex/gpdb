@@ -221,7 +221,6 @@ test_get_format_name(void **state)
         assert_string_equal(edata->message, "Unable to get format name for format code: x");
     }
     PG_END_TRY();
-
 }
 
 static void
