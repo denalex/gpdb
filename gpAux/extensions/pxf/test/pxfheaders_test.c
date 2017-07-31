@@ -36,6 +36,14 @@ test_build_http_headers(void **state) {
     gphd_uri->data = "this is test data";
     gphd_uri->uri = "testuri";
 
+    OptionData* option_data1 = (OptionData*) palloc0(sizeof(OptionData));
+    option_data1->key = "option1-key";
+    option_data1->value = "option1-value";
+    OptionData* option_data2 = (OptionData*) palloc0(sizeof(OptionData));
+    option_data2->key = "option2-key";
+    option_data2->value = "option2-value";
+    gphd_uri->options = list_make2(option_data1, option_data2);
+
     tuple.natts = 0;
     ext_tbl.fmtcode = 'c';
     rel->rd_id = 56;
@@ -72,6 +80,15 @@ test_build_http_headers(void **state) {
     expect_headers_append(headers, "X-GP-URL-HOST", gphd_uri->host);
     expect_headers_append(headers, "X-GP-URL-PORT", gphd_uri->port);
     expect_headers_append(headers, "X-GP-DATA-DIR", gphd_uri->data);
+
+
+    expect_string(normalize_key_name, key, "option1-key");
+    will_return(normalize_key_name, pstrdup("X-GP-OPTION1-KEY"));
+    expect_headers_append(headers, "X-GP-OPTION1-KEY", "option1-value");
+
+    expect_string(normalize_key_name, key, "option2-key");
+    will_return(normalize_key_name, pstrdup("X-GP-OPTION2-KEY"));
+    expect_headers_append(headers, "X-GP-OPTION2-KEY", "option2-value");
 
     expect_headers_append(headers, "X-GP-URI", gphd_uri->uri);
     expect_headers_append(headers, "X-GP-HAS-FILTER", "0");
