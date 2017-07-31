@@ -10,5 +10,50 @@ curl_easy_setopt(CURL *curl, CURLoption option, ...)
 CURL_EXTERN CURL*
 curl_easy_init(void)
 {
-  return (CURL*) mock()
+  return (CURL*) mock();
+}
+
+struct curl_slist*
+curl_slist_append(struct curl_slist* list, const char * string)
+{
+  check_expected(list);
+  check_expected(string);
+  return (struct curl_slist*) mock();
+}
+
+CURLM*
+curl_multi_init(void)
+{
+  return (CURLM*) mock();
+}
+
+CURL_EXTERN CURLMcode
+curl_multi_add_handle(CURLM *multi_handle, CURL *curl_handle)
+{
+  check_expected(multi_handle);
+  check_expected(curl_handle);
+  return (CURLMcode) mock();
+}
+
+CURL_EXTERN CURLMcode
+curl_multi_perform(CURLM *multi_handle, int *running_handles)
+{
+  check_expected(multi_handle);
+  check_expected(running_handles);
+  return (CURLMcode) mock();
+}
+
+CURL_EXTERN CURLMcode
+curl_multi_fdset(CURLM *multi_handle,
+                 fd_set *read_fd_set,
+                 fd_set *write_fd_set,
+                 fd_set *exc_fd_set,
+                 int *max_fd)
+{
+  check_expected(multi_handle);
+  check_expected(read_fd_set);
+  check_expected(write_fd_set);
+  check_expected(exc_fd_set);
+  check_expected(max_fd);
+  return (CURLMcode) mock();
 }
