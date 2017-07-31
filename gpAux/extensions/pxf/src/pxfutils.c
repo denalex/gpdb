@@ -218,7 +218,7 @@ char* normalize_key_name(const char* key)
 	{
 		ereport(ERROR,
 				(errcode(ERRCODE_INTERNAL_ERROR),
-						errmsg("internal error in pxfheaders.c:normalize_key_name. Parameter key is null or empty.")));
+						errmsg("internal error in pxfutils.c:normalize_key_name. Parameter key is null or empty.")));
 	}
 
 	StringInfoData formatter;
