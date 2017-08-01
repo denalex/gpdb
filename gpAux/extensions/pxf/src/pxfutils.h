@@ -46,12 +46,6 @@ void port_to_str(char** port, int new_port);
 /* parse the REST message and issue the libchurl call */
 void call_rest(GPHDUri *hadoop_uri, ClientContext *client_context, char* rest_msg);
 
-/* get ip address of loopback interface */
-char* get_loopback_ip_addr(void);
-
-/* replace first occurrence of replace in string with replacement*/
-char* replace_string(const char* string, const char* replace, const char* replacement);
-
 /* convert input string to upper case and prepend "X-GP-" prefix */
 char* normalize_key_name(const char* key);
 
