@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 #ifndef _GPHDFS_LIBCHURL_H_
 #define _GPHDFS_LIBCHURL_H_
 
