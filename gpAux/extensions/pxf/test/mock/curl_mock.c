@@ -40,6 +40,7 @@ curl_multi_perform(CURLM *multi_handle, int *running_handles)
 {
   check_expected(multi_handle);
   check_expected(running_handles);
+  optional_assignment(running_handles);
   return (CURLMcode) mock();
 }
 
@@ -55,5 +56,29 @@ curl_multi_fdset(CURLM *multi_handle,
   check_expected(write_fd_set);
   check_expected(exc_fd_set);
   check_expected(max_fd);
+  optional_assignment(read_fd_set);
+  optional_assignment(write_fd_set);
+  optional_assignment(exc_fd_set);
+  optional_assignment(max_fd);
   return (CURLMcode) mock();
 }
+
+int
+select(int nfds,
+       fd_set *read_fds,
+       fd_set *write_fds,
+       fd_set *except_fds,
+       struct timeval *timeout)
+{
+  check_expected(nfds);
+  check_expected(read_fds);
+  check_expected(write_fds);
+  check_expected(except_fds);
+  check_expected(timeout);
+  return (int) mock();
+}
+
+// void
+// CHECK_FOR_INTERRUPTS() {
+//   mock();
+// }
