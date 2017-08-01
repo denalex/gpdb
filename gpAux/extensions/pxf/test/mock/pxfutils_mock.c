@@ -58,6 +58,11 @@ replace_string(const char* string, const char* replace, const char* replacement)
 	return (char*) mock();
 }
 
+char*
+normalize_key_name(const char* key) {
+    check_expected(key);
+    return (char*) mock();
+}
 
 char*
 TypeOidGetTypename(Oid typid)

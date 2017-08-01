@@ -27,10 +27,6 @@
 #include "utils/builtins.h"
 #include "utils/formatting.h"
 #include "utils/syscache.h"
-#include <ifaddrs.h>
-#include <net/if.h>
-#include <netdb.h>
-#include <sys/socket.h>
 
 /* Wrapper for libchurl */
 static void process_request(ClientContext* client_context, char *uri);
