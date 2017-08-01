@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #include "pxfuriparser.h"
 
 #include "pxfutils.h"
