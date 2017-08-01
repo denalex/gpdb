@@ -421,6 +421,7 @@ GPHDUri_parse_segwork(GPHDUri *uri, const char *uri_str)
 {
 	char		*segwork;
 	char		*fragment;
+	char		*sizestr;
 	char		*size_end;
 	int 		 fragment_size, count = 0;
 
@@ -440,8 +441,8 @@ GPHDUri_parse_segwork(GPHDUri *uri, const char *uri_str)
 		/* expect size */
 		size_end = strchr(segwork, segwork_separator);
 		Assert(size_end != NULL);
-		*size_end = '\0';
-		fragment_size = atoi(segwork);
+        sizestr = pnstrdup(segwork, size_end - segwork);
+		fragment_size = atoi(sizestr);
 		segwork = size_end + 1; /* skip the size field */
 		Assert(fragment_size <= strlen(segwork));
 
@@ -450,9 +451,9 @@ GPHDUri_parse_segwork(GPHDUri *uri, const char *uri_str)
 		uri->fragments = GPHDUri_parse_fragment(fragment, uri->fragments);
 		segwork += fragment_size;
 		++count;
+		pfree(sizestr);
 		pfree(fragment);
 	}
-
 }
 
 /*

@@ -187,31 +187,6 @@ test_call_rest(void **state)
     pfree(hadoop_uri);
 }
 
-void
-test_replace_string(void **state)
-{
-    /* substring is not in the original string */
-    char* replaced = replace_string("bar", "foo", "xyz");
-    assert_string_equal(replaced, "bar");
-    pfree(replaced);
-
-    /* substring is not in the original string, but there's partial match */
-    replaced = replace_string("fobar", "foo", "xyz");
-    assert_string_equal(replaced, "fobar");
-    pfree(replaced);
-
-    /* substring is first in the original string, repeats 2 times, only 1st occurence is replaced */
-    replaced = replace_string("foofoobar", "foo", "xyz");
-    assert_string_equal(replaced, "xyzfoobar");
-    pfree(replaced);
-
-    /* substring is last in the original string */
-    replaced = replace_string("barfoo", "foo", "xyz");
-    assert_string_equal(replaced, "barxyz");
-    pfree(replaced);
-
-}
-
 int
 main(int argc, char* argv[])
 {
@@ -221,8 +196,7 @@ main(int argc, char* argv[])
             unit_test(test_are_ips_equal),
             unit_test(test_port_to_str),
             unit_test(test_normalize_key_name),
-            unit_test(test_call_rest),
-            unit_test(test_replace_string)
+            unit_test(test_call_rest)
     };
 
     MemoryContextInit();
