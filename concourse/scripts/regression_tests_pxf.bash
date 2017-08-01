@@ -61,7 +61,7 @@ function _main() {
 	fi
 
 	if [ "$TARGET_OS" != "centos" -a "$TARGET_OS" != "sles" ]; then
-		echo "FATAL: TARGET_OS is set to an invalid value: $TARGET_OS"
+		echo "FATAL: TARGET_OS is set to an unsupported value: $TARGET_OS"
 		echo "Configure TARGET_OS to be centos or sles"
 		exit 1
 	fi
