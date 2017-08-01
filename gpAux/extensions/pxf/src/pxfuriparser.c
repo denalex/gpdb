@@ -19,6 +19,7 @@
 
 
 #include "pxfuriparser.h"
+
 #include "pxfutils.h"
 #include "catalog/pg_exttable.h"
 #include "utils/guc.h"

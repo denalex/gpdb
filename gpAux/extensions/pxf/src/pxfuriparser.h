@@ -21,8 +21,6 @@
 
 #include "postgres.h"
 #include "fmgr.h"
-
-// TODO re-enable #include "access/ha_config.h"
 #include "utils/builtins.h"
 
 /*
@@ -71,16 +69,7 @@ typedef struct GPHDUri
 	char			*data;      /* data location (path)     */
 	char			*profile;   /* profile option			*/
 	List			*fragments; /* list of FragmentData		*/
-
-	/* options */
 	List			*options;   /* list of OptionData 		*/
-
-	/* HA
-	 * list of nodes for the HDFS HA case - the active host and port from
-	 * NNHAConf  will also occupy <host> and <port> members
-	 */
-	//TODO re-enable HA
-	//NNHAConf        *ha_nodes;
 } GPHDUri;
 
 GPHDUri	*parseGPHDUri(const char *uri_str);

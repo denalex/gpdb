@@ -22,10 +22,11 @@
 #define GPDB_PXFBRIDGE_H
 
 #include "postgres.h"
-#include "pxfuriparser.h"
+#include "cdb/cdbvars.h"
 #include "libchurl.h"
 #include "nodes/pg_list.h"
-#include "cdb/cdbvars.h"
+#include "pxfuriparser.h"
+
 
 typedef struct
 {
