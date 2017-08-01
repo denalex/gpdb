@@ -19,6 +19,7 @@
  */
 
 #include "pxfbridge.h"
+
 #include "access/extprotocol.h"
 #include "fmgr.h"
 

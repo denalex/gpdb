@@ -18,10 +18,10 @@
  */
 
 #include "libchurl.h"
-#include "lib/stringinfo.h"
-#include "utils/guc.h"
+
 #include "miscadmin.h"
 #include "pxfutils.h"
+#include "utils/guc.h"
 
 /* include libcurl without typecheck.
  * This allows wrapping curl_easy_setopt to be wrapped
