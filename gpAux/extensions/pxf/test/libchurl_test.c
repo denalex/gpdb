@@ -11,7 +11,6 @@
 #include "../src/libchurl.c"
 
 /* include mock files */
-#include "mock/pxfutils_mock.c"
 #include "mock/curl_mock.c"
 
 /* test strings */
@@ -24,15 +23,6 @@ test_set_curl_option(void **state)
     // set up context with a curl_handle
     churl_context* context = palloc0(sizeof(churl_context));
     context->curl_handle = (CURL*)palloc0(sizeof(CURL));
-
-    // set mock behavior for get_loopback_ip_addr
-    will_return(get_loopback_ip_addr, pstrdup("127.0.0.1"));
-
-    // set mock behavior for replace_string
-    expect_string(replace_string, string, uri_param);
-    expect_string(replace_string, replace, "localhost");
-    expect_string(replace_string, replacement, "127.0.0.1");
-    will_return(replace_string, pstrdup("pxf://127.0.0.1:51200/tmp/dummy1"));
 
     // set mock behavior for curl_easy_setopt
     expect_value(curl_easy_setopt, curl, context->curl_handle);
@@ -47,15 +37,15 @@ test_set_curl_option(void **state)
 }
 
 void
-curl_easy_setopt_test_helper(CURL* curl_handle, CURLoption option)
+curl_easy_setopt_test_helper(CURL* curl_handle, CURLoption in_option)
 {
     expect_value(curl_easy_setopt, curl, curl_handle);
-    expect_value(curl_easy_setopt, option, option);
+    expect_value(curl_easy_setopt, option, in_option);
     will_return(curl_easy_setopt, CURLE_OK);
 }
 
 void
-curl_slist_append_test_helper(char* header_string, struct curl_slist* slist)
+curl_slist_append_test_helper(struct curl_slist *slist, char *header_string)
 {
     expect_any(curl_slist_append, list);
     expect_string(curl_slist_append, string, header_string);
@@ -75,18 +65,10 @@ test_churl_init_upload(void **state)
 
     /* set mock behavior for all the set_curl_option calls */
 
-    // extra mocks for the first set_curl_option call
-
-    // set mock behavior for get_loopback_ip_addr
-    will_return(get_loopback_ip_addr, pstrdup("127.0.0.1"));
-
-    // set mock behavior for replace_string
-    expect_string(replace_string, string, uri_param);
-    expect_string(replace_string, replace, "localhost");
-    expect_string(replace_string, replacement, "127.0.0.1");
-    will_return(replace_string, pstrdup("pxf://127.0.0.1:51200/tmp/dummy1"));
+    curl_slist_append_test_helper(NULL, "localhost:51200:127.0.0.1");
 
     // set mock behavior for all the curl_easy_setopt calls
+    curl_easy_setopt_test_helper(mock_curl_handle, CURLOPT_RESOLVE);
     curl_easy_setopt_test_helper(mock_curl_handle, CURLOPT_URL);
     curl_easy_setopt_test_helper(mock_curl_handle, CURLOPT_VERBOSE);
     curl_easy_setopt_test_helper(mock_curl_handle, CURLOPT_ERRORBUFFER);
@@ -102,9 +84,9 @@ test_churl_init_upload(void **state)
 
     struct curl_slist* mock_curl_slist = palloc0(sizeof(struct curl_slist));
 
-    curl_slist_append_test_helper("Content-Type: application/octet-stream", mock_curl_slist);
-    curl_slist_append_test_helper("Transfer-Encoding: chunked", mock_curl_slist);
-    curl_slist_append_test_helper("Expect: 100-continue", mock_curl_slist);
+    curl_slist_append_test_helper(mock_curl_slist, "Content-Type: application/octet-stream");
+    curl_slist_append_test_helper(mock_curl_slist, "Transfer-Encoding: chunked");
+    curl_slist_append_test_helper(mock_curl_slist, "Expect: 100-continue");
 
 
     /* setup_multi_handle mock setup */
@@ -151,18 +133,10 @@ test_churl_init_download(void **state)
 
     /* set mock behavior for all the set_curl_option calls */
 
-    // extra mocks for the first set_curl_option call
-
-    // set mock behavior for get_loopback_ip_addr
-    will_return(get_loopback_ip_addr, pstrdup("127.0.0.1"));
-
-    // set mock behavior for replace_string
-    expect_string(replace_string, string, uri_param);
-    expect_string(replace_string, replace, "localhost");
-    expect_string(replace_string, replacement, "127.0.0.1");
-    will_return(replace_string, pstrdup("pxf://127.0.0.1:51200/tmp/dummy1"));
+    curl_slist_append_test_helper(NULL, "localhost:51200:127.0.0.1");
 
     // set mock behavior for all the curl_easy_setopt calls
+    curl_easy_setopt_test_helper(mock_curl_handle, CURLOPT_RESOLVE);
     curl_easy_setopt_test_helper(mock_curl_handle, CURLOPT_URL);
     curl_easy_setopt_test_helper(mock_curl_handle, CURLOPT_VERBOSE);
     curl_easy_setopt_test_helper(mock_curl_handle, CURLOPT_ERRORBUFFER);
@@ -219,11 +193,12 @@ test_churl_read(void **state)
 {
 
     int READ_LEN = 32;
-
+    ;
     /* context setup */
     CHURL_HANDLE handle = palloc0(sizeof(CHURL_HANDLE));
     churl_context* context = (churl_context*)handle;
     CURLM* mock_multi_handle = palloc0(sizeof(CURLM));
+    context->download_buffer = palloc0(sizeof(churl_buffer));
 
     context->multi_handle = mock_multi_handle;
     context->curl_still_running = 1;
@@ -262,6 +237,7 @@ test_churl_read(void **state)
     expect_any(curl_multi_perform, running_handles);
     will_assign_value(curl_multi_perform, running_handles, 0);
     will_return_with_sideeffect(curl_multi_perform, CURLM_OK, write_callback_wrapper, context);
+
 
     /* function call */
     size_t buffer_offset = churl_read(handle, buf, 32);
