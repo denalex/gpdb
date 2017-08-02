@@ -19,7 +19,6 @@
  */
 
 #include "pxfbridge.h"
-
 #include "pxfheaders.h"
 
 /* helper function declarations */

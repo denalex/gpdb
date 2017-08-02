@@ -18,17 +18,9 @@
  */
 
 #include "pxfheaders.h"
-
 #include "pxfutils.h"
-#include "postgres.h"
-#include "access/extprotocol.h"
 #include "access/fileam.h"
-#include "access/url.h"
-#include "catalog/namespace.h"
 #include "catalog/pg_exttable.h"
-#include "fmgr.h"
-#include "funcapi.h"
-#include "utils/formatting.h"
 
 static void add_alignment_size_httpheader(CHURL_HEADERS headers);
 static void add_tuple_desc_httpheader(CHURL_HEADERS headers, Relation rel);

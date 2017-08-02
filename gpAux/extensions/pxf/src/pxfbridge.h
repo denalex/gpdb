@@ -41,7 +41,7 @@ typedef struct
 
 void gpbridge_cleanup(gphadoop_context *context);
 void gpbridge_import_start(gphadoop_context *context);
-int gpbridge_read(gphadoop_context *context, char *databuf, int datalen);
+int  gpbridge_read(gphadoop_context *context, char *databuf, int datalen);
 
 /* helpers for dev debugging */
 

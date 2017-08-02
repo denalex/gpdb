@@ -18,13 +18,7 @@
  */
 
 #include "pxfutils.h"
-
-#include "catalog/catalog.h"
-#include "catalog/pg_tablespace.h"
 #include "commands/copy.h"
-#include "commands/dbcommands.h"
-#include "miscadmin.h"
-#include "utils/builtins.h"
 #include "utils/formatting.h"
 #include "utils/syscache.h"
 
