@@ -14,7 +14,7 @@ At present, this extension is in development status, where only Demo PXF profile
 
 ### Enable PXF extension in GPDB build process.
 
-Configure GPDB to build the pxf extension by adding the `--enable-pxf`
+Configure GPDB to build the pxf extension by adding the `--include-pxf`
 configure option. This is required to setup the PXF build environment.
 
 ### Build the PXF extension
