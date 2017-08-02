@@ -18,7 +18,6 @@
  */
 
 #include "libchurl.h"
-#include "lib/stringinfo.h"
 #include "utils/guc.h"
 #include "miscadmin.h"
 

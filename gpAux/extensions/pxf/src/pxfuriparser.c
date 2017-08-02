@@ -18,12 +18,7 @@
  */
 
 #include "pxfuriparser.h"
-
 #include "pxfutils.h"
-#include "catalog/pg_exttable.h"
-#include "utils/guc.h"
-#include "utils/formatting.h"
-#include "utils/uri.h"
 
 static const char* segwork_substring = "segwork=";
 static const char segwork_separator = '@';
