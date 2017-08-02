@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef GPDB_PXFBRIDGE_H
-#define GPDB_PXFBRIDGE_H
+#ifndef _PXFBRIDGE_H
+#define _PXFBRIDGE_H
 
 #include "postgres.h"
 #include "cdb/cdbvars.h"
@@ -27,44 +27,33 @@
 #include "nodes/pg_list.h"
 #include "pxfuriparser.h"
 
-
+/*
+ * Context for single query execution by PXF bridge
+ */
 typedef struct
 {
-    CHURL_HEADERS churl_headers;
-    CHURL_HANDLE churl_handle;
-    GPHDUri *gphd_uri;
-    StringInfoData uri;
-    ListCell *current_fragment;
-    StringInfoData write_file_name;
-    Relation relation;
+    CHURL_HEADERS   churl_headers;
+    CHURL_HANDLE    churl_handle;
+    GPHDUri*        gphd_uri;
+    StringInfoData  uri;
+    ListCell*       current_fragment;
+    StringInfoData  write_file_name;
+    Relation        relation;
 } gphadoop_context;
 
+/*
+ * Clean up churl related data structures from the context
+ */
 void gpbridge_cleanup(gphadoop_context *context);
+
+/*
+ * Sets up data before starting import
+ */
 void gpbridge_import_start(gphadoop_context *context);
+
+/*
+ * Reads data from PXF into the given buffer of a given size
+ */
 int  gpbridge_read(gphadoop_context *context, char *databuf, int datalen);
 
-/* helpers for dev debugging */
-
-#define PXF_DEBUG 0
-
-#ifdef UNIT_TESTING
-#define TESTING 1
-#else
-#define TESTING 0
-#endif
-
-#define PXFLOG(message, ...) \
-    if (PXF_DEBUG) { \
-        char _logbuff[sizeof(message) + 7] = message;\
-        memmove(_logbuff + 7, _logbuff, sizeof(_logbuff) - 7); \
-        memcpy(_logbuff, "seg%d: ", 7); \
-        if (TESTING) { \
-            char _msg[100]; \
-            snprintf(_msg, 100, _logbuff, GpIdentity.segindex, ##__VA_ARGS__); \
-            printf("%s\n", _msg); \
-        } \
-        else \
-            elog(INFO, _logbuff, GpIdentity.segindex, ##__VA_ARGS__); \
-    }
-
-#endif //GPDB_PXFBRIDGE_H
+#endif //_PXFBRIDGE_H

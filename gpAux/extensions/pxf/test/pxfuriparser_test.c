@@ -112,7 +112,8 @@ test_parseGPHDUri_NegativeTestNoProtocol(void **state)
  * Negative test: parsing of uri without options part
  */
 void
-test_parseGPHDUri_NegativeTestNoOptions(void **state) {
+test_parseGPHDUri_NegativeTestNoOptions(void **state)
+{
     char *uri = "pxf://1.2.3.4:5678/some/path/and/table.tbl";
     test_parseGPHDUri_helper(uri, ": missing options section");
 }
@@ -161,8 +162,8 @@ test_parseGPHDUri_NegativeTestMissingValue(void **state)
  * Test GPHDUri_parse_fragment when fragment string is valid and all parameters are passed
  */
 void
-test_GPHDUri_parse_fragment_ValidFragment(void **state) {
-
+test_GPHDUri_parse_fragment_ValidFragment(void **state)
+{
     char* fragment = "HOST@REST_PORT@TABLE_NAME@INDEX@FRAGMENT_METADATA@USER_DATA@PROFILE@";
 
     List *fragments = NIL;
@@ -188,7 +189,8 @@ test_GPHDUri_parse_fragment_ValidFragment(void **state) {
  * Test GPHDUri_parse_fragment when fragment string doesn't have profile
  */
 void
-test_GPHDUri_parse_fragment_EmptyProfile(void **state) {
+test_GPHDUri_parse_fragment_EmptyProfile(void **state)
+{
     char* fragment = "HOST@REST_PORT@TABLE_NAME@INDEX@FRAGMENT_METADATA@USER_DATA@@";
 
     List *fragments = NIL;
@@ -214,8 +216,8 @@ test_GPHDUri_parse_fragment_EmptyProfile(void **state) {
  * Test GPHDUri_parse_fragment when fragment string is empty
  */
 void
-test_GPHDUri_parse_fragment_EmptyString(void **state) {
-
+test_GPHDUri_parse_fragment_EmptyString(void **state)
+{
     char* fragment = "";
     test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.");
 }
@@ -224,18 +226,18 @@ test_GPHDUri_parse_fragment_EmptyString(void **state) {
  * Test GPHDUri_parse_fragment when fragment string is null
  */
 void
-test_GPHDUri_parse_fragment_NullFragment(void **state) {
-
+test_GPHDUri_parse_fragment_NullFragment(void **state)
+{
     char *fragment = NULL;
-    test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment.fragment string is null.");
+    test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is null.");
 }
 
 /*
  * Test GPHDUri_parse_fragment when fragment string has less tokens then expected
  */
 void
-test_GPHDUri_parse_fragment_MissingIpHost(void **state) {
-
+test_GPHDUri_parse_fragment_MissingIpHost(void **state)
+{
     char* fragment = "@";
     test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.");
 }
@@ -244,8 +246,8 @@ test_GPHDUri_parse_fragment_MissingIpHost(void **state) {
  * Test GPHDUri_parse_fragment when fragment string has less tokens then expected
  */
 void
-test_GPHDUri_parse_fragment_MissingPort(void **state) {
-
+test_GPHDUri_parse_fragment_MissingPort(void **state)
+{
     char* fragment = "@HOST@";
     test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.");
 }
@@ -254,8 +256,8 @@ test_GPHDUri_parse_fragment_MissingPort(void **state) {
  * Test GPHDUri_parse_fragment when fragment string has less tokens then expected
  */
 void
-test_GPHDUri_parse_fragment_MissingSourceName(void **state) {
-
+test_GPHDUri_parse_fragment_MissingSourceName(void **state)
+{
     char* fragment = "@HOST@PORT@";
     test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.");
 }
@@ -264,8 +266,8 @@ test_GPHDUri_parse_fragment_MissingSourceName(void **state) {
  * Test GPHDUri_parse_fragment when fragment string has less tokens then expected
  */
 void
-test_GPHDUri_parse_fragment_MissingIndex(void **state) {
-
+test_GPHDUri_parse_fragment_MissingIndex(void **state)
+{
     char* fragment = "@HOST@PORT@SOURCE_NAME@";
     test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.");
 }
@@ -274,8 +276,8 @@ test_GPHDUri_parse_fragment_MissingIndex(void **state) {
  * Test GPHDUri_parse_fragment when fragment string has less tokens then expected
  */
 void
-test_GPHDUri_parse_fragment_MissingFragmentMetadata(void **state) {
-
+test_GPHDUri_parse_fragment_MissingFragmentMetadata(void **state)
+{
     char* fragment = "@HOST@PORT@SOURCE_NAME@42@";
     test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.");
 }
@@ -284,8 +286,8 @@ test_GPHDUri_parse_fragment_MissingFragmentMetadata(void **state) {
  * Test GPHDUri_parse_fragment when fragment string has less tokens then expected
  */
 void
-test_GPHDUri_parse_fragment_MissingUserData(void **state) {
-
+test_GPHDUri_parse_fragment_MissingUserData(void **state)
+{
     char* fragment = "HOST@REST_PORT@TABLE_NAME@INDEX@FRAGMENT_METADATA@";
     test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.");
 }
@@ -294,27 +296,24 @@ test_GPHDUri_parse_fragment_MissingUserData(void **state) {
  * Test GPHDUri_parse_fragment when fragment string has less tokens then expected
  */
 void
-test_GPHDUri_parse_fragment_MissingProfile(void **state) {
-
+test_GPHDUri_parse_fragment_MissingProfile(void **state)
+{
     char* fragment = "HOST@REST_PORT@TABLE_NAME@INDEX@FRAGMENT_METADATA@USER_METADATA@";
     test_parseFragment_helper(fragment, "internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.");
 }
 
 void
-test_GPHDUri_parse_segwork_NoSegwork(void **state) {
-
+test_GPHDUri_parse_segwork_NoSegwork(void **state)
+{
     GPHDUri	*uri = (GPHDUri *)palloc0(sizeof(GPHDUri));
-
     GPHDUri_parse_segwork(uri, uri_no_segwork);
-
     assert_true(uri->fragments == NULL);
-
     pfree(uri);
 }
 
 void
-test_GPHDUri_parse_segwork_TwoFragments(void **state) {
-
+test_GPHDUri_parse_segwork_TwoFragments(void **state)
+{
     GPHDUri	*uri = (GPHDUri *)palloc0(sizeof(GPHDUri));
 
     GPHDUri_parse_segwork(uri, uri_with_segwork_2);
@@ -332,8 +331,8 @@ test_GPHDUri_parse_segwork_TwoFragments(void **state) {
  * Helper function for parse fragment test cases
  */
 static void
-test_parseFragment_helper(const char* fragment, const char* message) {
-
+test_parseFragment_helper(const char* fragment, const char* message)
+{
     List *fragments = NIL;
 
     MemoryContext old_context = CurrentMemoryContext;
@@ -400,8 +399,8 @@ test_parseGPHDUri_helper(const char* uri, const char* message)
 }
 
 static void
-expect_normalize_key_name(const char *key) {
-
+expect_normalize_key_name(const char *key)
+{
     StringInfoData keyname;
     initStringInfo(&keyname);
     appendStringInfo(&keyname, "X-GP-%s", key);

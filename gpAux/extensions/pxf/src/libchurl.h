@@ -78,17 +78,13 @@ CHURL_HEADERS churl_headers_init(void);
  * Add a new header
  * Headers are added in the form 'key: value'
  */
-void churl_headers_append(CHURL_HEADERS headers,
-                          const char* key,
-                          const char* value);
+void churl_headers_append(CHURL_HEADERS headers, const char* key, const char* value);
 /*
  * Override header with given 'key'.
  * If header doesn't exist, create new one (using churl_headers_append).
  * Headers are added in the form 'key: value'
  */
-void churl_headers_override(CHURL_HEADERS headers,
-                            const char* key,
-                            const char* value);
+void churl_headers_override(CHURL_HEADERS headers, const char* key, const char* value);
 /*
  * Remove header with given 'key'.
  * has_value specifies if the header has a value or only a key.
@@ -96,9 +92,7 @@ void churl_headers_override(CHURL_HEADERS headers,
  * If the header is the first one on the list,
  * point the headers list to the next element.
  */
-void churl_headers_remove(CHURL_HEADERS headers,
-                          const char* key,
-                          bool has_value);
+void churl_headers_remove(CHURL_HEADERS headers, const char* key, bool has_value);
 /*
  * Cleanup handle for headers
  */
@@ -151,4 +145,4 @@ void print_http_headers(CHURL_HEADERS headers);
 #define LocalhostIpV4Entry ":127.0.0.1"
 #define LocalhostIpV4 "localhost"
 
-#endif
+#endif //_GPHDFS_LIBCHURL_H_

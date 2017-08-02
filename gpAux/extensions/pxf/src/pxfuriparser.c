@@ -24,6 +24,7 @@ static const char* segwork_substring = "segwork=";
 static const char segwork_separator = '@';
 static const int EMPTY_VALUE_LEN = 2;
 
+/* helper function declarations */
 static void  GPHDUri_parse_protocol(GPHDUri *uri, char **cursor);
 static void  GPHDUri_parse_authority(GPHDUri *uri, char **cursor);
 static void  GPHDUri_parse_data(GPHDUri *uri, char **cursor);
@@ -34,11 +35,6 @@ static void  GPHDUri_parse_segwork(GPHDUri *uri, const char *uri_str);
 static List* GPHDUri_parse_fragment(char* fragment, List* fragments);
 static void  GPHDUri_free_fragments(GPHDUri *uri);
 static char	*GPHDUri_dup_without_segwork(const char* uri);
-
-
-//TODO restore HA logic
-//static void  GPHDUri_fetch_authority_from_ha_nn(GPHDUri *uri, char *nameservice);
-
 
 /* parseGPHDUri
  *
@@ -82,10 +78,12 @@ parseGPHDUri(const char *uri_str)
 	return uri;
 }
 
+/*
+ * Frees the elements of the data structure
+ */
 void
 freeGPHDUri(GPHDUri *uri)
 {
-
 	pfree(uri->protocol);
 	GPHDUri_free_fragments(uri);
 
@@ -96,11 +94,6 @@ freeGPHDUri(GPHDUri *uri)
 		pfree(uri->profile);
 
 	GPHDUri_free_options(uri);
-	//TODO restore HA logic
-	/*
-	if (uri->ha_nodes)
-		GPHD_HA_release_nodes(uri->ha_nodes);
-	 */
 
 	pfree(uri);
 }
@@ -169,15 +162,13 @@ GPHDUri_parse_authority(GPHDUri *uri, char **cursor)
 	if (*hoststart == '/')		
 		ereport(ERROR,
 				(errcode(ERRCODE_SYNTAX_ERROR),
-				 errmsg("Invalid URI %s : missing authority section",
-						 uri->uri)));
+				 errmsg("Invalid URI %s : missing authority section", uri->uri)));
 	
 	end = strchr(hoststart, '/');
 	if (!end)
 		ereport(ERROR,
 				(errcode(ERRCODE_SYNTAX_ERROR),
-				 errmsg("Invalid URI %s : missing authority section",
-						 uri->uri)));
+				 errmsg("Invalid URI %s : missing authority section", uri->uri)));
 	/* host:port string*/	
 	totlen = end - hoststart;
 	hostport = pnstrdup(hoststart, totlen);
@@ -194,12 +185,7 @@ GPHDUri_parse_authority(GPHDUri *uri, char **cursor)
 		uri->port = pstrdup(portstart + 1);
 		hostlen = portstart - hostport;
 		uri->host = pnstrdup(hostport, hostlen);
-		//TODO restore HA logic
-		// uri->ha_nodes = NULL; /* signal that we are not in the HA case */
 	}
-	//TODO restore HA logic
-	//else /* the authority is a nameservice string - we are going to find the HighAvailibility NN */
-	//	GPHDUri_fetch_authority_from_ha_nn(uri, hostport);
 
 	pfree(hostport);
 	*cursor = ++end;
@@ -208,51 +194,8 @@ GPHDUri_parse_authority(GPHDUri *uri, char **cursor)
 	if (port <=0 || port > max_port_number)
 		ereport(ERROR,
 				(errcode(ERRCODE_SYNTAX_ERROR),
-				 errmsg("Invalid port: %s for authority host %s",
-						uri->port, uri->host)));
-
-	//TODO restore Isilon logic
-	/* if pxf_isilon is true, ignore the port in the uri
-	 * and use pxf_service_port instead to access PXF.
-	 */
-	/*
-	if (pxf_isilon)
-	{
-		sprintf(uri->port, "%d", pxf_service_port);
-	}
-	*/
+				 errmsg("Invalid port: %s for authority host %s", uri->port, uri->host)));
 }
-
-/*
- * GPHDUri_fetch_authority_from_ha_nn
- *
- * Fetch authority from the high-availability Namenode pair.
- * In case we got a simple string for the authority instead
- * of a host:port form, we assume that we received a nameservice 
- * string describing a High-Availability Namenode couple.
- * For this case we are going to read the HDFS client configuration
- * in order to retrieve the active Namenode host:port based on the
- * nameservice string.
- * TODO:
- * This is a temporary solution that will be removed once the PXF servlet
- * will stop using the HDFS namenode/datanodes as a hosting application
- * server and will move to an independent stand-alone application server 
- */
-//TODO restore HA logic
-/*
-static void
-GPHDUri_fetch_authority_from_ha_nn(GPHDUri *uri, char *nameservice)
-{
-	uri->ha_nodes = GPHD_HA_load_nodes(nameservice);
-	*
-	 * Let's try our luck with the first node. In case the first one is not active
-	 * the failover code around call_rest() - pxfmasterapi.c, will try the second
-	 * node
-	 *
-	uri->host = pstrdup(uri->ha_nodes->nodes[0]);
-	uri->port = pstrdup(uri->ha_nodes->restports[0]);
-}
-*/
 
 /*
  * GPHDUri_parse_data
@@ -303,8 +246,7 @@ GPHDUri_parse_options(GPHDUri *uri, char **cursor)
 	if (!start || start[0] != '?')
 		ereport(ERROR,
 				(errcode(ERRCODE_SYNTAX_ERROR),
-				 errmsg("Invalid URI %s: missing options section",
-						uri->uri)));
+				 errmsg("Invalid URI %s: missing options section", uri->uri)));
 
 	/* skip '?' */
 	start++;
@@ -313,8 +255,7 @@ GPHDUri_parse_options(GPHDUri *uri, char **cursor)
 	if (strlen(start) < 2)
 		ereport(ERROR,
 				(errcode(ERRCODE_SYNTAX_ERROR),
-				 errmsg("Invalid URI %s: invalid option after '?'",
-						uri->uri)));
+				 errmsg("Invalid URI %s: invalid option after '?'", uri->uri)));
 
 	/* ok, parse the options now */
 
@@ -349,31 +290,27 @@ GPHDUri_parse_option(char* pair, GPHDUri *uri)
 	pair_len = strlen(pair);
 
 	sep = strchr(pair, '=');
-	if (sep == NULL) {
+	if (sep == NULL)
 		ereport(ERROR,
 				(errcode(ERRCODE_SYNTAX_ERROR),
 				 errmsg("Invalid URI %s: option '%s' missing '='", uri->uri, pair)));
-	}
 
-	if (strchr(sep + 1, '=') != NULL) {
+	if (strchr(sep + 1, '=') != NULL)
 		ereport(ERROR,
 				(errcode(ERRCODE_SYNTAX_ERROR),
 				 errmsg("Invalid URI %s: option '%s' contains duplicate '='", uri->uri, pair)));
-	}
 
 	key_len = sep - pair;
-	if (key_len == 0) {
+	if (key_len == 0)
 		ereport(ERROR,
 				(errcode(ERRCODE_SYNTAX_ERROR),
 				 errmsg("Invalid URI %s: option '%s' missing key before '='", uri->uri, pair)));
-	}
-	
+
 	value_len = pair_len - key_len + 1;
-	if (value_len == EMPTY_VALUE_LEN) {
+	if (value_len == EMPTY_VALUE_LEN)
 		ereport(ERROR,
 				(errcode(ERRCODE_SYNTAX_ERROR),
 				 errmsg("Invalid URI %s: option '%s' missing value after '='", uri->uri, pair)));
-	}
     
 	option_data->key = pnstrdup(pair,key_len);
 	option_data->value = pnstrdup(sep + 1, value_len);
@@ -463,7 +400,9 @@ GPHDUri_parse_fragment(char* fragment, List* fragments)
 {
 	if (!fragment)
 	{
-		ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment.fragment string is null.")));
+		ereport(ERROR,
+				(errcode(ERRCODE_INTERNAL_ERROR),
+				 errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is null.")));
 	}
 
 	char	*dup_frag = pstrdup(fragment);
@@ -482,7 +421,9 @@ GPHDUri_parse_fragment(char* fragment, List* fragments)
 	value_end = strchr(value_start, segwork_separator);
 	if (value_end == NULL)
 	{
-		ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.")));
+		ereport(ERROR,
+				(errcode(ERRCODE_INTERNAL_ERROR),
+				 errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.")));
 	}
 	*value_end = '\0';
 	appendStringInfo(&authority_formatter, "%s:", value_start);
@@ -492,7 +433,9 @@ GPHDUri_parse_fragment(char* fragment, List* fragments)
 	value_end = strchr(value_start, segwork_separator);
 	if (value_end == NULL)
 	{
-		ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.")));
+		ereport(ERROR,
+				(errcode(ERRCODE_INTERNAL_ERROR),
+				 errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.")));
 	}
 	*value_end = '\0';
 	appendStringInfo(&authority_formatter, "%s", value_start);
@@ -504,7 +447,9 @@ GPHDUri_parse_fragment(char* fragment, List* fragments)
 	value_end = strchr(value_start, segwork_separator);
 	if (value_end == NULL)
 	{
-		ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.")));
+		ereport(ERROR,
+				(errcode(ERRCODE_INTERNAL_ERROR),
+				 errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.")));
 	}
 	*value_end = '\0';
 	fragment_data->source_name = pstrdup(value_start);
@@ -514,7 +459,9 @@ GPHDUri_parse_fragment(char* fragment, List* fragments)
 	value_end = strchr(value_start, segwork_separator);
 	if (value_end == NULL)
 	{
-		ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.")));
+		ereport(ERROR,
+				(errcode(ERRCODE_INTERNAL_ERROR),
+				 errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.")));
 	}
 	*value_end = '\0';
 	fragment_data->index = pstrdup(value_start);
@@ -525,7 +472,9 @@ GPHDUri_parse_fragment(char* fragment, List* fragments)
 	value_end = strchr(value_start, segwork_separator);
 	if (value_end == NULL)
 	{
-		ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.")));
+		ereport(ERROR,
+				(errcode(ERRCODE_INTERNAL_ERROR),
+				 errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.")));
 	}
 	*value_end = '\0';
 	fragment_data->fragment_md = pstrdup(value_start);
@@ -536,7 +485,9 @@ GPHDUri_parse_fragment(char* fragment, List* fragments)
 	value_end = strchr(value_start, segwork_separator);
 	if (value_end == NULL)
 	{
-		ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.")));
+		ereport(ERROR,
+				(errcode(ERRCODE_INTERNAL_ERROR),
+				 errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.")));
 	}
 	*value_end = '\0';
 	fragment_data->user_data = pstrdup(value_start);
@@ -547,7 +498,9 @@ GPHDUri_parse_fragment(char* fragment, List* fragments)
 	value_end = strchr(value_start, segwork_separator);
 	if (value_end == NULL)
 	{
-		ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.")));
+		ereport(ERROR,
+				(errcode(ERRCODE_INTERNAL_ERROR),
+				 errmsg("internal error in pxfuriparser.c:GPHDUri_parse_fragment. Fragment string is invalid.")));
 	}
 	*value_end = '\0';
 	if (strlen(value_start) > 0)

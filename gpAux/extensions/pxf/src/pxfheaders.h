@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef _PXF_HEADERS_H_
-#define _PXF_HEADERS_H_
+#ifndef _PXFHEADERS_H_
+#define _PXFHEADERS_H_
 
 #define GpdbWritableFormatName "GPDBWritable"
 #define TextFormatName "TEXT"
@@ -36,6 +36,9 @@ typedef struct sPxfInputData
 	Relation		rel;
 } PxfInputData;
 
+/*
+ * Adds the headers necessary for PXF service call
+ */
 void build_http_headers(PxfInputData *input);
 
-#endif
+#endif //_PXFHEADERS_H_
