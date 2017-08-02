@@ -18,8 +18,8 @@
  */
 
 #include "libchurl.h"
-#include "utils/guc.h"
 #include "miscadmin.h"
+#include "utils/guc.h"
 
 /* include libcurl without typecheck.
  * This allows wrapping curl_easy_setopt to be wrapped
@@ -123,7 +123,8 @@ void print_http_headers(CHURL_HEADERS headers);
 /*
  * Debug function - print the http headers
  */
-void print_http_headers(CHURL_HEADERS headers)
+void
+print_http_headers(CHURL_HEADERS headers)
 {
 	if ((DEBUG2 >= log_min_messages) || (DEBUG2 >= client_min_messages))
 	{
@@ -142,7 +143,8 @@ void print_http_headers(CHURL_HEADERS headers)
 	}
 }
 
-CHURL_HEADERS churl_headers_init(void)
+CHURL_HEADERS
+churl_headers_init(void)
 {
 	churl_settings* settings = (churl_settings*)palloc0(sizeof(churl_settings));
 	return (CHURL_HEADERS)settings;
@@ -153,9 +155,8 @@ CHURL_HEADERS churl_headers_init(void)
  * and populate <key> and <value> in it.
  * If value is empty, return <key>.
  */
-char* build_header_str(const char* format,
-					   const char* key,
-					   const char* value)
+char*
+build_header_str(const char* format, const char* key, const char* value)
 {
 	char* header_option = NULL;
 
@@ -171,9 +172,8 @@ char* build_header_str(const char* format,
 	return header_option;
 }
 
-void churl_headers_append(CHURL_HEADERS headers,
-						  const char* key,
-						  const char* value)
+void
+churl_headers_append(CHURL_HEADERS headers, const char* key, const char* value)
 {
 	churl_settings* settings = (churl_settings*)headers;
 	char* header_option = NULL;
@@ -185,9 +185,8 @@ void churl_headers_append(CHURL_HEADERS headers,
 	pfree(header_option);
 }
 
-void churl_headers_override(CHURL_HEADERS headers,
-							const char* key,
-							const char* value)
+void
+churl_headers_override(CHURL_HEADERS headers, const char* key, const char* value)
 {
 
 	churl_settings* settings = (churl_settings*)headers;
@@ -232,9 +231,8 @@ void churl_headers_override(CHURL_HEADERS headers,
 	pfree(key_option);
 }
 
-void churl_headers_remove(CHURL_HEADERS headers,
-						  const char* key,
-						  bool has_value)
+void
+churl_headers_remove(CHURL_HEADERS headers, const char* key, bool has_value)
 {
 
 	churl_settings* settings = (churl_settings*)headers;
@@ -291,7 +289,8 @@ void churl_headers_remove(CHURL_HEADERS headers,
 	pfree(key_option);
 }
 
-void churl_headers_cleanup(CHURL_HEADERS headers)
+void
+churl_headers_cleanup(CHURL_HEADERS headers)
 {
 	churl_settings* settings = (churl_settings*)headers;
 	if (!settings)
@@ -303,14 +302,16 @@ void churl_headers_cleanup(CHURL_HEADERS headers)
 	pfree(settings);
 }
 
-static CHURL_HANDLE churl_init(const char* url, CHURL_HEADERS headers)
+static CHURL_HANDLE
+churl_init(const char* url, CHURL_HEADERS headers)
 {
 	churl_context* context = churl_new_context();
 	create_curl_handle(context);
 	clear_error_buffer(context);
 
 	/* needed to resolve localhost */
-	if (strstr(url, LocalhostIpV4) != NULL) {
+	if (strstr(url, LocalhostIpV4) != NULL)
+    {
 		struct curl_slist *resolve_hosts = NULL;
 		char *pxf_host_entry = (char *) palloc0(strlen(PxfServiceAddress) + strlen(LocalhostIpV4Entry) + 1);
 		strcat(pxf_host_entry, PxfServiceAddress);
@@ -333,7 +334,8 @@ static CHURL_HANDLE churl_init(const char* url, CHURL_HEADERS headers)
 	return (CHURL_HANDLE)context;
 }
 
-CHURL_HANDLE churl_init_upload(const char* url, CHURL_HEADERS headers)
+CHURL_HANDLE
+churl_init_upload(const char* url, CHURL_HEADERS headers)
 {
 	churl_context* context = churl_init(url, headers);
 
@@ -351,7 +353,8 @@ CHURL_HANDLE churl_init_upload(const char* url, CHURL_HEADERS headers)
 	return (CHURL_HANDLE)context;
 }
 
-CHURL_HANDLE churl_init_download(const char* url, CHURL_HEADERS headers)
+CHURL_HANDLE
+churl_init_download(const char* url, CHURL_HEADERS headers)
 {
 	churl_context* context = churl_init(url, headers);
 
@@ -362,7 +365,8 @@ CHURL_HANDLE churl_init_download(const char* url, CHURL_HEADERS headers)
 	return (CHURL_HANDLE)context;
 }
 
-void churl_download_restart(CHURL_HANDLE handle, const char* url, CHURL_HEADERS headers)
+void
+churl_download_restart(CHURL_HANDLE handle, const char* url, CHURL_HEADERS headers)
 {
 	churl_context* context = (churl_context*)handle;
 
@@ -385,7 +389,8 @@ void churl_download_restart(CHURL_HANDLE handle, const char* url, CHURL_HEADERS 
 /*
  * upload
  */
-size_t churl_write(CHURL_HANDLE handle, const char* buf, size_t bufsize)
+size_t
+churl_write(CHURL_HANDLE handle, const char* buf, size_t bufsize)
 {
 	churl_context* context = (churl_context*)handle;
 	churl_buffer* context_buffer = context->upload_buffer;
@@ -407,7 +412,8 @@ size_t churl_write(CHURL_HANDLE handle, const char* buf, size_t bufsize)
 /*
  * check that connection is ok, read a few bytes and check response.
  */
-void churl_read_check_connectivity(CHURL_HANDLE handle)
+void
+churl_read_check_connectivity(CHURL_HANDLE handle)
 {
 	churl_context* context = (churl_context*)handle;
 	Assert(!context->upload);
@@ -419,7 +425,8 @@ void churl_read_check_connectivity(CHURL_HANDLE handle)
 /*
  * download
  */
-size_t churl_read(CHURL_HANDLE handle, char* buf, size_t max_size)
+size_t
+churl_read(CHURL_HANDLE handle, char* buf, size_t max_size)
 {
 	int	n = 0;
 	churl_context* context = (churl_context*)handle;
@@ -444,7 +451,8 @@ size_t churl_read(CHURL_HANDLE handle, char* buf, size_t max_size)
 	return n;
 }
 
-void churl_cleanup(CHURL_HANDLE handle, bool after_error)
+void
+churl_cleanup(CHURL_HANDLE handle, bool after_error)
 {
 	churl_context* context = (churl_context*)handle;
 	if (!context)
@@ -465,7 +473,8 @@ void churl_cleanup(CHURL_HANDLE handle, bool after_error)
 	churl_cleanup_context(context);
 }
 
-churl_context* churl_new_context()
+churl_context*
+churl_new_context()
 {
 	churl_context* context = palloc0(sizeof(churl_context));
 	context->download_buffer = palloc0(sizeof(churl_buffer));
@@ -473,21 +482,24 @@ churl_context* churl_new_context()
 	return context;
 }
 
-void clear_error_buffer(churl_context* context)
+void
+clear_error_buffer(churl_context* context)
 {
 	if (!context)
 		return;
 	context->curl_error_buffer[0] = 0;
 }
 
-void create_curl_handle(churl_context* context)
+void
+create_curl_handle(churl_context* context)
 {
 	context->curl_handle = curl_easy_init();
 	if (!context->curl_handle)
 		elog(ERROR, "internal error: curl_easy_init failed");
 }
 
-void set_curl_option(churl_context* context, CURLoption option, const void* data)
+void
+set_curl_option(churl_context* context, CURLoption option, const void* data)
 {
 	int curl_error;
 	if (CURLE_OK != (curl_error = curl_easy_setopt(context->curl_handle, option, data)))
@@ -500,7 +512,8 @@ void set_curl_option(churl_context* context, CURLoption option, const void* data
  * Copies data from internal buffer to libcurl's buffer.
  * Once zero is returned, libcurl knows upload is over
  */
-size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userdata)
+size_t
+read_callback(void *ptr, size_t size, size_t nmemb, void *userdata)
 {
 	churl_context* context = (churl_context*)userdata;
 	churl_buffer* context_buffer = context->upload_buffer;
@@ -516,7 +529,8 @@ size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userdata)
 /*
  * Setups the libcurl multi API
  */
-void setup_multi_handle(churl_context* context)
+void
+setup_multi_handle(churl_context* context)
 {
 	int curl_error;
 
@@ -541,7 +555,8 @@ void setup_multi_handle(churl_context* context)
  * During this functions execution,
  * callbacks are called.
  */
-void multi_perform(churl_context* context)
+void
+multi_perform(churl_context* context)
 {
 	int curl_error;
 	while (CURLM_CALL_MULTI_PERFORM ==
@@ -552,12 +567,14 @@ void multi_perform(churl_context* context)
 			 curl_error, curl_easy_strerror(curl_error));
 }
 
-bool internal_buffer_large_enough(churl_buffer* buffer, size_t required)
+bool
+internal_buffer_large_enough(churl_buffer* buffer, size_t required)
 {
 	return ((buffer->top + required) <= buffer->max);
 }
 
-void flush_internal_buffer(churl_context* context)
+void
+flush_internal_buffer(churl_context* context)
 {
 	churl_buffer* context_buffer = context->upload_buffer;
 	if (context_buffer->top == 0)
@@ -589,7 +606,9 @@ void flush_internal_buffer(churl_context* context)
  * If it's not available, returns an empty string.
  * The returned value should be free'd.
  */
-char* get_dest_address(CURL* curl_handle) {
+char*
+get_dest_address(CURL* curl_handle)
+{
 	char	*dest_ip = NULL;
 	long	 dest_port = 0;
 	StringInfoData addr;
@@ -605,7 +624,8 @@ char* get_dest_address(CURL* curl_handle) {
 	return addr.data;
 }
 
-void enlarge_internal_buffer(churl_buffer* buffer, size_t required)
+void
+enlarge_internal_buffer(churl_buffer* buffer, size_t required)
 {
 	if (buffer->ptr != NULL)
 		pfree(buffer->ptr);
@@ -618,7 +638,8 @@ void enlarge_internal_buffer(churl_buffer* buffer, size_t required)
  * Let libcurl finish the upload by
  * calling perform repeatedly
  */
-void finish_upload(churl_context* context)
+void
+finish_upload(churl_context* context)
 {
 	if (!context->multi_handle)
 		return;
@@ -634,7 +655,8 @@ void finish_upload(churl_context* context)
 	check_response(context);
 }
 
-void cleanup_curl_handle(churl_context* context)
+void
+cleanup_curl_handle(churl_context* context)
 {
 	if (!context->curl_handle)
 		return;
@@ -646,7 +668,8 @@ void cleanup_curl_handle(churl_context* context)
 	context->multi_handle = NULL;
 }
 
-void multi_remove_handle(churl_context* context)
+void
+multi_remove_handle(churl_context* context)
 {
 	int curl_error;
 
@@ -658,7 +681,8 @@ void multi_remove_handle(churl_context* context)
 			 curl_error, curl_easy_strerror(curl_error));
 }
 
-void cleanup_internal_buffer(churl_buffer* buffer)
+void
+cleanup_internal_buffer(churl_buffer* buffer)
 {
 	if ((buffer) && (buffer->ptr))
 	{
@@ -670,7 +694,8 @@ void cleanup_internal_buffer(churl_buffer* buffer)
 	}
 }
 
-void churl_cleanup_context(churl_context* context)
+void
+churl_cleanup_context(churl_context* context)
 {
 	if (context)
 	{
@@ -688,7 +713,8 @@ void churl_cleanup_context(churl_context* context)
  * Stores data from libcurl's buffer into the internal buffer.
  * If internal buffer is not large enough, increases it.
  */
-size_t write_callback(char *buffer, size_t size, size_t nitems, void *userp)
+size_t
+write_callback(char *buffer, size_t size, size_t nitems, void *userp)
 {
     churl_context* context = (churl_context*)userp;
     churl_buffer* context_buffer = context->download_buffer;
@@ -712,7 +738,8 @@ size_t write_callback(char *buffer, size_t size, size_t nitems, void *userp)
  * Fills internal buffer up to want bytes.
  * returns when size reached or transfer ended
  */
-int fill_internal_buffer(churl_context* context, int want)
+int
+fill_internal_buffer(churl_context* context, int want)
 {
     fd_set 	fdread;
     fd_set 	fdwrite;
@@ -764,8 +791,8 @@ int fill_internal_buffer(churl_context* context, int want)
     return 0;
 }
 
-void churl_headers_set(churl_context* context,
-					   CHURL_HEADERS headers)
+void
+churl_headers_set(churl_context* context, CHURL_HEADERS headers)
 {
 	churl_settings* settings = (churl_settings*)headers;
 	set_curl_option(context, CURLOPT_HTTPHEADER, settings->headers);
@@ -775,7 +802,8 @@ void churl_headers_set(churl_context* context,
  * Checks that the response finished successfully
  * with a valid response status and code.
  */
-void check_response(churl_context* context)
+void
+check_response(churl_context* context)
 {
 	check_response_code(context);
 	check_response_status(context);
@@ -787,7 +815,8 @@ void check_response(churl_context* context)
  * a message can have a response code 200 (OK), but end prematurely
  * and so have an error status.
  */
-void check_response_status(churl_context* context)
+void
+check_response_status(churl_context* context)
 {
 	CURLMsg *msg; /* for picking up messages with the transfer status */
 	int msgs_left; /* how many messages are left */
@@ -822,7 +851,8 @@ void check_response_status(churl_context* context)
  * Parses return code from libcurl operation and
  * reports if different than 200 and 100
  */
-void check_response_code(churl_context* context)
+void
+check_response_code(churl_context* context)
 {
 	long 	 response_code;
 	char	*response_text = NULL;
@@ -1024,7 +1054,8 @@ get_http_error_msg(long http_ret_code, char* msg, char* curl_error_buffer)
 	return msg;
 }
 
-void free_http_response(churl_context* context)
+void
+free_http_response(churl_context* context)
 {
 	if (!context->last_http_reponse)
 		return;
@@ -1037,8 +1068,8 @@ void free_http_response(churl_context* context)
  * Called during a perform by libcurl on either download or an upload.
  * Stores the first line of the header for error reporting
  */
-size_t header_callback(char *buffer, size_t size,
-					   size_t nitems, void *userp)
+size_t
+header_callback(char *buffer, size_t size, size_t nitems, void *userp)
 {
 	const int nbytes = size * nitems;
     churl_context* context = (churl_context*)userp;
@@ -1054,7 +1085,8 @@ size_t header_callback(char *buffer, size_t size,
 	return nbytes;
 }
 
-void compact_internal_buffer(churl_buffer* buffer)
+void
+compact_internal_buffer(churl_buffer* buffer)
 {
 	int n;
 	/* no compaction required */
@@ -1067,7 +1099,8 @@ void compact_internal_buffer(churl_buffer* buffer)
 	buffer->top = n;
 }
 
-void realloc_internal_buffer(churl_buffer* buffer, size_t required)
+void
+realloc_internal_buffer(churl_buffer* buffer, size_t required)
 {
 	int n;
 
@@ -1081,7 +1114,8 @@ void realloc_internal_buffer(churl_buffer* buffer, size_t required)
 	buffer->max = n;
 }
 
-bool handle_special_error(long response, StringInfo err)
+bool
+handle_special_error(long response, StringInfo err)
 {
 	switch (response)
 	{

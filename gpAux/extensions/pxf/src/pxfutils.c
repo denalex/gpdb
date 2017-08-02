@@ -22,19 +22,25 @@
 #include "utils/formatting.h"
 #include "utils/syscache.h"
 
-/* Wrapper for libchurl */
+/* public function declarations */
 static void process_request(ClientContext* client_context, char *uri);
 
-/* checks if two ip strings are equal */
-bool are_ips_equal(char *ip1, char *ip2)
+/*
+ * Checks if two strings are equal
+ */
+bool
+are_ips_equal(char *ip1, char *ip2)
 {
 	if ((ip1 == NULL) || (ip2 == NULL))
 		return false;
 	return (strcmp(ip1, ip2) == 0);
 }
 
-/* override port str with given new port int */
-void port_to_str(char **port, int new_port)
+/*
+ * Override port str with given new port int
+ */
+void
+port_to_str(char **port, int new_port)
 {
 	char tmp[10];
 
@@ -55,9 +61,7 @@ void port_to_str(char **port, int new_port)
  * <hadoop_uri->host>:<hadoop_uri->port>
  */
 void
-call_rest(GPHDUri *hadoop_uri,
-		  ClientContext *client_context,
-		  char *rest_msg)
+call_rest(GPHDUri *hadoop_uri, ClientContext *client_context, char *rest_msg)
 {
 	StringInfoData request;
 	initStringInfo(&request);
@@ -74,9 +78,10 @@ call_rest(GPHDUri *hadoop_uri,
 }
 
 /*
- * Wrapper for libchurl
+ * Reads from churl in chunks of 64K and copies data to the context's buffer
  */
-static void process_request(ClientContext* client_context, char *uri)
+static void
+process_request(ClientContext* client_context, char *uri)
 {
 	size_t n = 0;
 	char buffer[RAW_BUF_SIZE];
@@ -118,7 +123,8 @@ static void process_request(ClientContext* client_context, char *uri)
  * Converts input string to upper case and prepends "X-GP-" string
  *
  */
-char* normalize_key_name(const char* key)
+char*
+normalize_key_name(const char* key)
 {
 	if (!key || strlen(key) == 0)
 	{

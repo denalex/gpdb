@@ -30,7 +30,8 @@ static size_t fill_buffer(gphadoop_context *context, char *start, size_t size);
 /*
  * Clean up churl related data structures from the context.
  */
-void gpbridge_cleanup(gphadoop_context *context)
+void
+gpbridge_cleanup(gphadoop_context *context)
 {
     if (context == NULL)
         return;
@@ -41,13 +42,18 @@ void gpbridge_cleanup(gphadoop_context *context)
     churl_headers_cleanup(context->churl_headers);
     context->churl_headers = NULL;
 
-    if (context->gphd_uri != NULL) {
+    if (context->gphd_uri != NULL)
+    {
         freeGPHDUri(context->gphd_uri);
         context->gphd_uri = NULL;
     }
 }
 
-void gpbridge_import_start(gphadoop_context *context)
+/*
+ * Sets up data before starting import
+ */
+void
+gpbridge_import_start(gphadoop_context *context)
 {
 
     context->current_fragment = list_head(context->gphd_uri->fragments);
@@ -57,14 +63,46 @@ void gpbridge_import_start(gphadoop_context *context)
 
     set_current_fragment_headers(context);
 
-    context->churl_handle = churl_init_download(context->uri.data,
-                                                context->churl_headers);
+    context->churl_handle = churl_init_download(context->uri.data, context->churl_headers);
 
     /* read some bytes to make sure the connection is established */
     churl_read_check_connectivity(context->churl_handle);
 }
 
-static void build_uri_for_read(gphadoop_context* context)
+/*
+ * Reads data from PXF into the given buffer of a given size
+ */
+int
+gpbridge_read(gphadoop_context *context, char *databuf, int datalen)
+{
+    size_t n = 0;
+
+    while ((n = fill_buffer(context, databuf, datalen)) == 0)
+    {
+        /* done processing all data for current fragment -
+         * check if the connection terminated with an error */
+        churl_read_check_connectivity(context->churl_handle);
+
+        /* start processing next fragment */
+        context->current_fragment = lnext(context->current_fragment);
+        if (context->current_fragment == NULL)
+            return 0;
+
+        set_current_fragment_headers(context);
+        churl_download_restart(context->churl_handle, context->uri.data, context->churl_headers);
+
+        /* read some bytes to make sure the connection is established */
+        churl_read_check_connectivity(context->churl_handle);
+    }
+
+    return (int) n;
+}
+
+/*
+ * Format the URI by adding PXF service endpoint details
+ */
+static void
+build_uri_for_read(gphadoop_context* context)
 {
     FragmentData* data = (FragmentData*)lfirst(context->current_fragment);
     resetStringInfo(&context->uri);
@@ -74,21 +112,17 @@ static void build_uri_for_read(gphadoop_context* context)
 }
 
 /*
- * Add key/value pairs to connection header.
- * These values are the context of the query and used
+ * Add key/value pairs to connection header. These values are the context of the query and used
  * by the remote component.
  */
-static void add_querydata_to_http_headers(gphadoop_context* context)
+static void
+add_querydata_to_http_headers(gphadoop_context* context)
 {
     PxfInputData inputData = {0};
     inputData.headers = context->churl_headers;
     inputData.gphduri = context->gphd_uri;
     inputData.rel = context->relation;
-    //TODO port back filter and projection pushdown logic when implemented in GPDB
-    //TODO port back delegation token support, if needed
-
     build_http_headers(&inputData);
-
 }
 
 /*
@@ -101,7 +135,8 @@ static void add_querydata_to_http_headers(gphadoop_context* context)
  * 2. X-GP-FRAGMENT-USER-DATA header is changed to the current fragment's user data.
  * If the fragment doesn't have user data, the header will be removed.
  */
-static void set_current_fragment_headers(gphadoop_context* context)
+static void
+set_current_fragment_headers(gphadoop_context* context)
 {
     FragmentData* frag_data = (FragmentData*)lfirst(context->current_fragment);
     elog(DEBUG2, "pxf: set_current_fragment_source_name: source_name %s, index %s, has user data: %s ",
@@ -127,7 +162,8 @@ static void set_current_fragment_headers(gphadoop_context* context)
         churl_headers_override(context->churl_headers, "X-GP-PROFILE", frag_data->profile);
         elog(DEBUG2, "pxf: set_current_fragment_headers: using profile: %s", frag_data->profile);
 
-    } else if (context->gphd_uri->profile)
+    }
+    else if (context->gphd_uri->profile)
     {
         /* if current fragment doesn't have any optimal profile, set to use profile from url */
         churl_headers_override(context->churl_headers, "X-GP-PROFILE", context->gphd_uri->profile);
@@ -137,34 +173,9 @@ static void set_current_fragment_headers(gphadoop_context* context)
 
 }
 
-int
-gpbridge_read(gphadoop_context *context, char *databuf, int datalen)
-{
-    size_t n = 0;
-
-    while ((n = fill_buffer(context, databuf, datalen)) == 0)
-    {
-        /* done processing all data for current fragment -
-         * check if the connection terminated with an error */
-        churl_read_check_connectivity(context->churl_handle);
-
-        /* start processing next fragment */
-        context->current_fragment = lnext(context->current_fragment);
-        if (context->current_fragment == NULL) {
-            return 0;
-        }
-
-        set_current_fragment_headers(context);
-        churl_download_restart(context->churl_handle, context->uri.data, context->churl_headers);
-
-        /* read some bytes to make sure the connection is established */
-        churl_read_check_connectivity(context->churl_handle);
-    }
-
-    return (int) n;
-
-}
-
+/*
+ * Read data from churl until the buffer is full or there is no more data to be read
+ */
 static size_t
 fill_buffer(gphadoop_context *context, char *start, size_t size)
 {

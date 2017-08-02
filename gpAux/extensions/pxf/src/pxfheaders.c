@@ -22,6 +22,7 @@
 #include "access/fileam.h"
 #include "catalog/pg_exttable.h"
 
+/* helper function declarations */
 static void add_alignment_size_httpheader(CHURL_HEADERS headers);
 static void add_tuple_desc_httpheader(CHURL_HEADERS headers, Relation rel);
 static void add_location_options_httpheader(CHURL_HEADERS headers, GPHDUri *gphduri);
@@ -32,7 +33,8 @@ static char* get_format_name(char fmtcode);
  * These values are the context of the query and used 
  * by the remote component. 
  */
-void build_http_headers(PxfInputData *input)
+void
+build_http_headers(PxfInputData *input)
 {
 	extvar_t ev;
 	CHURL_HEADERS headers = input->headers; 
@@ -51,21 +53,13 @@ void build_http_headers(PxfInputData *input)
 		add_tuple_desc_httpheader(headers, rel);
 	}
 
-	//TODO port projection info logic
-
 	/* GP cluster configuration */
 	external_set_env_vars(&ev, gphduri->uri, false, NULL, NULL, false, 0);
 	
 	churl_headers_append(headers, "X-GP-SEGMENT-ID", ev.GP_SEGMENT_ID);
 	churl_headers_append(headers, "X-GP-SEGMENT-COUNT", ev.GP_SEGMENT_COUNT);
 	churl_headers_append(headers, "X-GP-XID", ev.GP_XID);
-	
-	/* Report alignment size to remote component
-	 * GPDBWritable uses alignment that has to be the same as
-	 * in the C code.
-	 * Since the C code can be compiled for both 32 and 64 bits,
-	 * the alignment can be either 4 or 8.
-	 */
+
 	add_alignment_size_httpheader(headers);
 	
 	/* headers for uri data */
@@ -82,11 +76,6 @@ void build_http_headers(PxfInputData *input)
 	/* filters */
     //TODO port filter logic, for now assume no filters
 	churl_headers_append(headers, "X-GP-HAS-FILTER", "0");
-
-	/* Aggregate information */
-    //TODO port aggregate information
-    //TODO port delegation token header, if needed
-    //TODO port remote credentials, if needed
 }
 
 /* Report alignment size to remote component
@@ -95,7 +84,8 @@ void build_http_headers(PxfInputData *input)
  * Since the C code can be compiled for both 32 and 64 bits, 
  * the alignment can be either 4 or 8. 
  */
-static void add_alignment_size_httpheader(CHURL_HEADERS headers)
+static void
+add_alignment_size_httpheader(CHURL_HEADERS headers)
 {	
     char tmp[sizeof(char*)];	
     pg_ltoa(sizeof(char*), tmp);	
@@ -113,7 +103,8 @@ static void add_alignment_size_httpheader(CHURL_HEADERS headers)
  * optional - X-GP-ATTR-TYPEMODX-COUNT - total number of modifier for attribute X
  * optional - X-GP-ATTR-TYPEMODX-Y - attribute X's modifiers Y (types which have precision info, like numeric(p,s))
  */
-static void add_tuple_desc_httpheader(CHURL_HEADERS headers, Relation rel)
+static void
+add_tuple_desc_httpheader(CHURL_HEADERS headers, Relation rel)
 {	
     char long_number[sizeof(int32) * 8];
     StringInfoData formatter;	
@@ -232,7 +223,8 @@ static void add_tuple_desc_httpheader(CHURL_HEADERS headers, Relation rel)
  * The options in the LOCATION statement of "create extenal table"
  * FRAGMENTER=HdfsDataFragmenter&ACCESSOR=SequenceFileAccessor... 
  */
-static void add_location_options_httpheader(CHURL_HEADERS headers, GPHDUri *gphduri)
+static void
+add_location_options_httpheader(CHURL_HEADERS headers, GPHDUri *gphduri)
 {
 	ListCell *option = NULL;
 	
@@ -245,17 +237,24 @@ static void add_location_options_httpheader(CHURL_HEADERS headers, GPHDUri *gphd
 	}
 }
 
-static char* get_format_name(char fmtcode)
+/*
+ * Converts a character code for the format name into a string of format definition
+ */
+static char*
+get_format_name(char fmtcode)
 {
 	char *formatName = NULL;
 
 	if (fmttype_is_text(fmtcode) || fmttype_is_csv(fmtcode))
 	{
 		formatName = TextFormatName;
-	} else if (fmttype_is_custom(fmtcode))
+	}
+	else if (fmttype_is_custom(fmtcode))
 	{
 		formatName = GpdbWritableFormatName;
-	} else {
+	}
+	else
+	{
 		ereport(ERROR,
 			(errcode(ERRCODE_INTERNAL_ERROR),
 			 errmsg("Unable to get format name for format code: %c", fmtcode)));

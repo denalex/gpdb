@@ -162,11 +162,16 @@ test_pxfprotocol_import_last_call(void **state)
 }
 
 /* test setup and teardown methods */
-void before_test(void) {
+void
+before_test(void)
+{
     // set global variables
     GpIdentity.segindex = 0;
 }
-void after_test(void) {
+
+void
+after_test(void)
+{
     // no-op, but the teardown seems to be required when the test fails, otherwise CMockery issues a mismatch error
 }
 

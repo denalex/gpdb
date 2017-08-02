@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef _PXF_UTILS_H_
-#define _PXF_UTILS_H_
+#ifndef _PXFUTILS_H_
+#define _PXFUTILS_H_
 
 #include "postgres.h"
 #include "libchurl.h"
@@ -39,10 +39,6 @@ bool are_ips_equal(char *ip1, char *ip2);
 /* override port str with given new port int */
 void port_to_str(char** port, int new_port);
 
-/* get hdfs location from current session's filespace entry */
-//TODO re-enable, if needed
-//void get_hdfs_location_from_filespace(char** path);
-
 /* parse the REST message and issue the libchurl call */
 void call_rest(GPHDUri *hadoop_uri, ClientContext *client_context, char* rest_msg);
 
@@ -52,4 +48,4 @@ char* normalize_key_name(const char* key);
 /* get the name of the type, given the OID */
 char* TypeOidGetTypename(Oid typid);
 
-#endif	// _PXF_UTILS_H_
+#endif	// _PXFUTILS_H_

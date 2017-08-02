@@ -40,20 +40,31 @@ static gphadoop_context* create_context(PG_FUNCTION_ARGS, bool is_import);
 static void cleanup_context(gphadoop_context *context);
 static void check_caller(PG_FUNCTION_ARGS, const char* func_name);
 
+/*
+ * Validates external table URL
+ */
 Datum
 pxfprotocol_validate_urls(PG_FUNCTION_ARGS)
 {
+    //TODO: provide real implementation
 	elog(INFO, "Dummy PXF protocol validate");
 	PG_RETURN_VOID();
 }
 
+/*
+ * Writes to an external table
+ */
 Datum
 pxfprotocol_export(PG_FUNCTION_ARGS)
 {
+    //TODO: provide real implementation
 	elog(INFO, "Dummy PXF protocol write");
     PG_RETURN_INT32(0);
 }
 
+/*
+ * Reads tuples from an external table
+ */
 Datum
 pxfprotocol_import(PG_FUNCTION_ARGS)
 {
@@ -67,7 +78,6 @@ pxfprotocol_import(PG_FUNCTION_ARGS)
     if (EXTPROTOCOL_IS_LAST_CALL(fcinfo)) {
         cleanup_context(context);
         EXTPROTOCOL_SET_USER_CTX(fcinfo, NULL);
-        PXFLOG("returning from last call");
         PG_RETURN_INT32(0);
     }
 
@@ -80,14 +90,14 @@ pxfprotocol_import(PG_FUNCTION_ARGS)
 
     int bytes_read = gpbridge_read(context, EXTPROTOCOL_GET_DATABUF(fcinfo), EXTPROTOCOL_GET_DATALEN(fcinfo));
 
-    PXFLOG("bytes read %d", bytes_read);
     PG_RETURN_INT32(bytes_read);
 }
 
 /*
  * Allocates context and initializes values.
  */
-static gphadoop_context* create_context(PG_FUNCTION_ARGS, bool is_import)
+static gphadoop_context*
+create_context(PG_FUNCTION_ARGS, bool is_import)
 {
     gphadoop_context* context = palloc0(sizeof(gphadoop_context));
 
@@ -110,11 +120,8 @@ static gphadoop_context* create_context(PG_FUNCTION_ARGS, bool is_import)
                      GpIdentity.segindex + 1,
                      'x' + GpIdentity.segindex);
 
-    PXFLOG("URL=%s", uri_with_segwork.data);
-
     /* parse the URI */
     context->gphd_uri = parseGPHDUri(uri_with_segwork.data);
-    // context->gphd_uri = parseGPHDUri(EXTPROTOCOL_GET_URL(fcinfo));
     if (is_import)
         Assert(context->gphd_uri->fragments != NULL);
 
@@ -131,9 +138,11 @@ static gphadoop_context* create_context(PG_FUNCTION_ARGS, bool is_import)
 /*
  * De-allocates context and dependent structures.
  */
-static void cleanup_context(gphadoop_context *context)
+static void
+cleanup_context(gphadoop_context *context)
 {
-    if (context != NULL) {
+    if (context != NULL)
+    {
         gpbridge_cleanup(context);
         pfree(context->uri.data);
         pfree(context->write_file_name.data);
@@ -141,7 +150,11 @@ static void cleanup_context(gphadoop_context *context)
     }
 }
 
-static void check_caller(PG_FUNCTION_ARGS, const char* func_name)
+/*
+ * Checks that the caller is External Protocol Manager
+ */
+static void
+check_caller(PG_FUNCTION_ARGS, const char* func_name)
 {
     if (!CALLED_AS_EXTPROTOCOL(fcinfo))
         ereport(ERROR,

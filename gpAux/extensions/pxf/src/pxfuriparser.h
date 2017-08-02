@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef _PXF_URIPARSER_H_
-#define _PXF_URIPARSER_H_
+#ifndef _PXFURIPARSER_H_
+#define _PXFURIPARSER_H_
 
 #include "postgres.h"
 #include "fmgr.h"
@@ -50,6 +50,9 @@ typedef struct FragmentData
 	char	 *profile;
 } FragmentData;
 
+/*
+ * Structure to store options data, such as types of fragmenters, accessors and resolvers
+ */
 typedef struct OptionData
 {
 	char	 *key;
@@ -61,8 +64,6 @@ typedef struct OptionData
  */
 typedef struct GPHDUri
 {
-
-    /* common */
     char 			*uri;		/* the unparsed user uri	*/
 	char			*protocol;	/* the protocol name		*/
 	char			*host;		/* host name str			*/
@@ -73,7 +74,14 @@ typedef struct GPHDUri
 	List			*options;   /* list of OptionData 		*/
 } GPHDUri;
 
+/*
+ * Parses a string URI into a data structure
+ */
 GPHDUri	*parseGPHDUri(const char *uri_str);
+
+/*
+ * Frees the elements of the data structure
+ */
 void 	 freeGPHDUri(GPHDUri *uri);
 
-#endif	// _PXF_URIPARSER_H_
+#endif	// _PXFURIPARSER_H_
