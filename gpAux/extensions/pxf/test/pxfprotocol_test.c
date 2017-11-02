@@ -220,8 +220,8 @@ void
 test_pxfprotocol_export_first_call(void **state)
 {
 	/* setup call info with no call context */
-	PG_FUNCTION_ARGS = palloc(sizeof(FunctionCallInfoData));
-	fcinfo->context = palloc(sizeof(ExtProtocolData));
+	PG_FUNCTION_ARGS = palloc0(sizeof(FunctionCallInfoData));
+	fcinfo->context = palloc0(sizeof(ExtProtocolData));
 	fcinfo->context->type = T_ExtProtocolData;
 	EXTPROTOCOL_GET_DATALEN(fcinfo) = 100;
 	EXTPROTOCOL_GET_DATABUF(fcinfo) = palloc0(EXTPROTOCOL_GET_DATALEN(fcinfo));
