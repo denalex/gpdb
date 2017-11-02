@@ -227,21 +227,21 @@ test_pxfprotocol_export_first_call(void **state)
 	EXTPROTOCOL_GET_DATABUF(fcinfo) = palloc0(EXTPROTOCOL_GET_DATALEN(fcinfo));
 	((ExtProtocolData *) fcinfo->context)->prot_last_call = false;
 	((ExtProtocolData *) fcinfo->context)->prot_url = uri_param;
-
+    printf("1");
 	Relation	relation = (Relation) palloc0(sizeof(Relation));
 
 	((ExtProtocolData *) fcinfo->context)->prot_relation = relation;
 
 	/* set mock behavior for uri parsing */
 	GPHDUri		*gphd_uri = palloc0(sizeof(GPHDUri));
-
+    printf("2");
 	expect_string(parseGPHDUri, uri_str, uri_param);
 	will_return(parseGPHDUri, gphd_uri);
-
+    printf("3");
 	/* set mock behavior for bridge export start -- nothing here */
 	expect_any(gpbridge_export_start, context);
 	will_be_called(gpbridge_export_start);
-
+    printf("4");
 	/* set mock behavior for bridge write */
 	const int	EXPECTED_SIZE = 31;
 
@@ -250,24 +250,30 @@ test_pxfprotocol_export_first_call(void **state)
 	expect_value(gpbridge_write, databuf, EXTPROTOCOL_GET_DATABUF(fcinfo));
 	expect_value(gpbridge_write, datalen, EXTPROTOCOL_GET_DATALEN(fcinfo));
 	will_return(gpbridge_write, EXPECTED_SIZE);
-
+    printf("5");
 	Datum		d = pxfprotocol_export(fcinfo);
-
+    printf("6");
 	/* return number of bytes written to the bridge */
 	assert_int_equal(DatumGetInt32(d), EXPECTED_SIZE);
 	gphadoop_context *context = (gphadoop_context *) EXTPROTOCOL_GET_USER_CTX(fcinfo);
-
+    printf("7");
 	/* context has been created */
 	assert_true(context != NULL);
+    printf("8");
 	/* gphduri has been parsed */
 	assert_true(context->gphd_uri != NULL);
+    printf("9");
 	/* uri has been initialized */
 	assert_true(context->uri.data != NULL);
+    printf("10");
 	/* write file name initialized, but empty, since it is filled by another component */
 	assert_int_equal(context->write_file_name.len, 0);
+    printf("11");
 	assert_true(context->relation != NULL);
+    printf("12");
 	/* relation pointer is copied */
 	assert_int_equal(context->relation, relation);
+    printf("13");
 
 	/* cleanup */
 	pfree(relation);
