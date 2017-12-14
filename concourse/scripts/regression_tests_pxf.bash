@@ -73,6 +73,22 @@ function setup_singlecluster() {
 		unpack_tarball ./*.tar.gz; \
 	fi && popd
 
+	# enable impersonation by gpadmin user
+	pushd singlecluster/hadoop/etc/hadoop
+	cat > proxy-config.xml <<-EOF
+	<property>
+		<name>hadoop.proxyuser.gpadmin.hosts</name>
+		<value>*</value>
+	</property>
+	<property>
+		<name>hadoop.proxyuser.gpadmin.groups</name>
+		<value>*</value>
+	</property>
+	EOF
+	sed -i -e '/<configuration>/r proxy-config.xml' core-site.xml
+	rm proxy-config.xml
+	popd
+
 	pushd singlecluster/bin
 	export SLAVES=1
 	./init-gphd.sh
