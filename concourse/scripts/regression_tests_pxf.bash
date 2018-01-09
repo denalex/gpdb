@@ -84,8 +84,13 @@ function setup_singlecluster() {
 		<name>hadoop.proxyuser.gpadmin.groups</name>
 		<value>*</value>
 	</property>
+	<property>
+		<name>hadoop.security.authorization</name>
+		<value>true</value>
+	</property>
 	EOF
 	sed -i -e '/<configuration>/r proxy-config.xml' core-site.xml
+	sed -i -e '/<configuration>/r proxy-config.xml' ../../../hbase/conf/hbase-site.xml
 	rm proxy-config.xml
 	popd
 
